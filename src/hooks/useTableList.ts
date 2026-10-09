@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { TablePaginationConfig } from 'antd';
 import type { PageParams, PageResult } from '@/types/common';
-import { useUrlFilter } from './useUrlFilter';
+import { useListFilter } from './useListFilter';
 import { useListQuery } from './useListQuery';
 
 export interface UseTableListOptions<TData, TFilter extends Record<string, unknown>> {
@@ -21,15 +21,15 @@ export interface UseTableListOptions<TData, TFilter extends Record<string, unkno
  * 列表页三件套（筛选 + 表格 + 分页）统一入口 —— 只做「组合」，不写具体逻辑。
  *
  * 分层：
- * - useUrlFilter  -> 筛选与分页 <-> URL（可分享、刷新不丢、后退可还原）
- * - useListQuery  -> TanStack Query 数据层（loading / error / 缓存 / 竞态全部免写）
+ * - useListFilter -> 筛选与分页 <-> 组件内存状态（默认空筛选 + page=1 + pageSize=10，不与 URL 同步）
+ * - useListQuery  -> TanStack Query 数据层（loading / error / 缓存 / 翻页保留旧数据全部免写）
  * - 本 hook        -> 把两层拼起来，外加 antd 分页配置与「查询动作」计数
  */
 export function useTableList<TData, TFilter extends Record<string, unknown>>(
   options: UseTableListOptions<TData, TFilter>,
 ) {
   const { queryKey, api, defaultFilter, defaultPageSize = 10 } = options;
-  const { filter, page, pageSize, setFilter, reset, setPagination } = useUrlFilter<TFilter>({
+  const { filter, page, pageSize, setFilter, reset, setPagination } = useListFilter<TFilter>({
     defaultFilter,
     defaultPageSize,
   });
@@ -42,7 +42,7 @@ export function useTableList<TData, TFilter extends Record<string, unknown>>(
 
   const query = useListQuery<TData, TFilter>({ queryKey, api, filter, page, pageSize, nonce });
 
-  /** 提交筛选条件，回到第一页，并触发一次查询（≈ 一次显式「查询」动作，顺带把条件写进 URL） */
+  /** 提交筛选条件，回到第一页，并触发一次查询（≈ 一次显式「查询」动作） */
   const submitFilter = useCallback(
     (draft: Partial<TFilter>) => {
       setFilter({ ...filter, ...draft });
@@ -72,6 +72,7 @@ export function useTableList<TData, TFilter extends Record<string, unknown>>(
   const dataSource = useMemo(() => query.data?.list ?? [], [query.data]);
 
   // 多数列表页只用前六项；total/refetch/query 为高级场景预留（自定义汇总、手动重拉、读 error 状态）。
+  // 页面默认不用挂错误 UI：查询失败由 api/request.ts 的响应拦截器全局 toast。
   return {
     filter,
     dataSource,

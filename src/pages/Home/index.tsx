@@ -37,7 +37,11 @@ const GROUPS: StackGroup[] = [
       },
       { name: 'axios', version: '1.20', desc: '只在 api/request.ts 出现，业务里见不到它' },
       { name: 'zustand', version: '5.0', desc: '客户端 UI 状态，persist 中间件已启用' },
-      { name: 'react-router-dom', version: '7.18', desc: '筛选与分页写进 URL，可分享、刷新不丢' },
+      {
+        name: 'react-router-dom',
+        version: '7.18',
+        desc: 'data router + 声明式路由守卫（AuthGuard）',
+      },
     ],
   },
   {

@@ -1,5 +1,6 @@
 import { App, Avatar, Button, Dropdown, Layout, Menu, Space, Switch, Typography } from 'antd';
 import { LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAccess } from '@/hooks/useAccess';
 import { useAuthStore } from '@/stores/auth';
@@ -11,6 +12,7 @@ const { Header, Sider, Content } = Layout;
 export default function BasicLayout() {
   const { message } = App.useApp();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const pathname = useLocation().pathname;
 
   // 按需订阅：一个 selector 取一个字段，避免整个 store 变化都触发重渲染
@@ -27,6 +29,9 @@ export default function BasicLayout() {
 
   const handleLogout = () => {
     signOut();
+    // QueryClient 是模块级单例、queryKey 又不带用户标识：不清缓存会让下一个登录的账号
+    // 短暂看到上一个账号的列表数据（staleTime: 0 只会后台重拉，不影响先渲染出来的旧 data）
+    queryClient.clear();
     message.success('已退出登录');
     navigate('/login', { replace: true });
   };
@@ -82,6 +87,7 @@ export default function BasicLayout() {
           collapsed={collapsed}
           onCollapse={toggleCollapsed}
           theme={dark ? 'dark' : 'light'}
+          /* 侧边栏宽度的唯一来源在这里（antd Sider 宽度由 prop 写成 inline style，SCSS 盖不住） */
           width={220}
           /* 关掉 Sider 自带触发条（其配色不跟随 darkAlgorithm），统一用 Header 里的折叠按钮 */
           trigger={null}

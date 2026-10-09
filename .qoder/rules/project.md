@@ -22,7 +22,7 @@ trigger: always_on
 | --- | --- | --- |
 | React 组件文件 / 页面目录 | PascalCase | `BasicLayout.tsx`、`pages/UserList/`、`components/SearchForm/` |
 | 目录入口"桶文件" | 小写 `index.tsx` | `components/SearchForm/index.tsx` |
-| Hook 文件 | camelCase，`use` 前缀 | `useTableList.ts`、`useUrlFilter.ts` |
+| Hook 文件 | camelCase，`use` 前缀 | `useTableList.ts`、`useListFilter.ts` |
 | 非组件工具/接口/状态模块 | 小写 | `api/request.ts`、`stores/auth.ts`、`constants/dict.ts` |
 | 含 JSX 的辅助文件 | 小写也允许，但导出的是函数则保持小写 | `pages/UserList/columns.tsx`（`buildColumns` 返回列配置） |
 | **页面私有组件** | PascalCase **扁平文件**，放 `pages/<Page>/components/` | `pages/UserList/components/UserFormModal.tsx` |
@@ -49,12 +49,12 @@ trigger: always_on
 
 | 状态类型 | 归位 | 例子 |
 | --- | --- | --- |
-| 组件内部临时状态 | `useState` | 弹窗开关、表单草稿 |
+| 组件内部临时状态 | `useState` | 弹窗开关、表单草稿、**列表筛选/分页** |
 | 服务端数据 | TanStack Query | 列表、详情、字典 |
 | 跨页面 UI 状态 | Zustand | 主题、菜单折叠、登录用户 |
-| 可分享的页面状态 | **URL search params** | 筛选条件、页码 |
+| 需跨页面/可分享的状态 | **URL search params** | 登录回跳 `redirect` |
 
-- 筛选/分页**不进 store**，写进 URL：可分享、刷新不丢、后退还原；写 URL 统一 `replace: true`。
+- 列表筛选/分页**不进 store、不写 URL**，由 `useListFilter` 以组件内 `useState` 持有（默认进页面即空筛选 + `page=1` + `pageSize=10`）；代价是不再可分享、刷新即丢、后退不还原（产品已确认接受）。
 - 业务数据**不进** store / URL，一律走 react-query。
 
 ## 4. 样式分层（优先级从高到低）
@@ -71,11 +71,11 @@ trigger: always_on
 
 - 列表页必须走 `useTableList + SearchForm + PageTable`；**页面内不得写任何请求生命周期**（loading/try-catch/reload）。
 - 列表页固定文件结构：`pages/<Entity>List/index.tsx` + `columns.tsx` + `components/<Entity>FormModal.tsx`（见 2.1）。
-- `useTableList` 已分层：`useUrlFilter`（URL↔状态）+ `useListQuery`（react-query）+ 门面。加新列表页**不改**核心 hook。
+- `useTableList` 已分层：`useListFilter`（组件内存状态：筛选/分页，默认空筛选 + page=1 + pageSize=10）+ `useListQuery`（react-query）+ 门面。加新列表页**不改**核心 hook。
 - 列表**不缓存**：`useListQuery` 里 `staleTime: 0`（数据实时；全局默认 30s 只留给详情/字典）。
 - `nonce` 表达「一次显式查询动作」：点查询/重置自增，即使筛选没变也发一次请求。**不要删除**。
 - 增/改/删成功后：`queryClient.invalidateQueries({ queryKey: [QUERY_KEY] })`；`QUERY_KEY` 用模块级常量，传入 hook 与 invalidate 共用，避免字符串漂移。
-- 列表错误：`query.isError` 时用 `Alert` 提示 + 「重试」按钮。
+- 列表错误：**页面不写错误 UI**（不挂 `Alert` / 「重试」按钮）。查询失败提示统一由 `api/request.ts` 的 **response 拦截器**全局 toast：GET 失败（含 HTTP 200 + 业务码非 0）弹一次（同文案 1.5s 内去重）；401 直接 `signOut()`，由 `AuthGuard` 响应式送回 `/login`。写操作（新增/编辑/删除/登录）的失败文案仍由调用方的 `useMutation.onError` 给，避免双重弹窗。
 
 ## 6. 关键坑（改动前必读，与 README 第八节一致）
 
@@ -86,11 +86,15 @@ trigger: always_on
 5. antd Modal 实例会复用（不像 Vue `v-if` 销毁重建）：`open` 变化时必须 `resetFields()` + `setFieldsValue()`。
 6. 交互回调要传给 `columns`/子组件时：回调用 `useCallback`、`columns` 用 `useMemo`；依赖 `useMutation` 的回调请解构 `mutateAsync`（引用稳定）再放依赖，别把每次 render 都变的 mutation 对象塞进 deps。
 7. 雪碧图的 `<use>` 只能**继承** `fill`/`stroke`：元素自身写死的颜色属性优先级高于继承，外层 CSS 盖不住。`stroke` 已由插件 `strokeOverride: true` 统一成 `currentColor`，**写死 `fill` 的 svg 入库前必须手工清色**，否则暗色模式下图标看不见。
+8. 翻页 / 改每页条数**不得**让 `filter` 换对象引用：`useListFilter` 把 `filter` 与 `page/pageSize` 拆成各自独立的 `useState`，改分页只换分页状态引用、不动 `filter`；因为 `SearchForm` 靠 `values`（= `filter`）引用变化回填草稿，若翻页牵连换 `filter` 引用会把用户未提交的输入打掉。
+9. `body` / `#root` 在 `.ant-app` **之外**，全局样式里写 `var(--ant-*)` 解析不出（静默失效）；要拿 token 只能写在 `ConfigProvider` 内部的容器上。
+10. 退出登录除了清 auth store，还必须 `queryClient.clear()`：`QueryClient` 是模块级单例且 `queryKey` 不带用户标识，不清会让下一个账号短暂看到上一个账号的数据。
 
 ## 7. 验证清单（提交前）
 
 - `pnpm typecheck` → `pnpm lint`（0 error，尽量 0 warning）→ `pnpm build`。
-- 手测列表页（`admin/123456`）：①点查询发一次请求（筛选不变也发）；②翻页旧数据不闪白；③重置清空回第一页；④增/改/删后 invalidate 自动刷新；⑤改筛选 URL 同步、刷新不丢、后退还原；⑥`editor` 手输 `/audit` 跳 403；⑦暗色切换跟随。
+- 手测列表页（`admin/123456`）：①点查询发一次请求（筛选不变也发）；②翻页旧数据不闪白；③重置清空回第一页；④增/改/删后 invalidate 自动刷新；⑤`editor` 手输 `/audit` 跳 403；⑥暗色切换跟随。
+- 回归本次审查修掉的坑：⑦输入未点「查询」时翻页，草稿不能丢；⑧手改 `/login?redirect=//evil.com` 登录后只能落在站内（回落 `/`）；⑨关掉 mock（`VITE_USE_MOCK=false` 且后端不可达）时列表失败弹全局 toast，而不是只看到空表。
 
 ## 8. 语言与注释约定
 

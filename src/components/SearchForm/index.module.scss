@@ -8,13 +8,8 @@
   border-radius: $radius-md;
 }
 
-.main {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: $space-sm $space-md;
-}
-
+// .main（筛选行）与 .fields（字段容器）布局一致，合并一条规则，避免两处不同步
+.main,
 .fields {
   display: flex;
   align-items: center;

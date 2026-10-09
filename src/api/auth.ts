@@ -1,7 +1,6 @@
 import type { LoginPayload, LoginResult, RoleCode, UserProfile } from '@/types/auth';
 import { http } from './request';
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+import { delay, USE_MOCK } from './env';
 
 /**
  * 演示账号，密码统一 123456。
@@ -13,12 +12,17 @@ const DEMO_ACCOUNTS: Record<string, { name: string; roles: RoleCode[] }> = {
   viewer: { name: '只读访客', roles: ['viewer'] },
 };
 
-const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
-
 export async function login(payload: LoginPayload): Promise<LoginResult> {
   if (USE_MOCK) {
     await delay(400);
-    const found: { name: string; roles: RoleCode[] } | undefined = DEMO_ACCOUNTS[payload.account];
+    // ⚠️ 用 Object.hasOwn 而不是直接下标取：`DEMO_ACCOUNTS['constructor']` 这类 key 会命中
+    // 原型链上的函数（truthy），让 `!found` 判空失效，产出一个 name/roles 都是 undefined 的「登录成功」
+    const found: { name: string; roles: RoleCode[] } | undefined = Object.hasOwn(
+      DEMO_ACCOUNTS,
+      payload.account,
+    )
+      ? DEMO_ACCOUNTS[payload.account]
+      : undefined;
     if (!found || payload.password !== '123456') {
       throw new Error('账号或密码错误');
     }

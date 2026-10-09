@@ -15,8 +15,8 @@ body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei',
     sans-serif;
-  background: var(--ant-color-bg-layout);
-  color: var(--ant-color-text);
+  // 这里不能写 var(--ant-*)：antd v6 的 token 变量挂在 .ant-app 子树，而 body 是它的祖先，
+  // 取值解析不出来只会让声明静默失效。页面底色由 <Layout> / 各页容器自己在 ConfigProvider 内部负责。
 }
 
 a {

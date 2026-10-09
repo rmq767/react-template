@@ -19,8 +19,11 @@ export interface UseListQueryOptions<TData, TFilter extends Record<string, unkno
 }
 
 /**
- * 纯数据层：把 api 交给 useQuery，负责 loading / error / 缓存 / 竞态 / 翻页保留旧数据。
+ * 纯数据层：把 api 交给 useQuery，负责 loading / error / 缓存 / 翻页保留旧数据。
  * 不含路由、不含 UI 组件配置，可脱离页面单独使用或做单元测试。
+ *
+ * ⚠︎ 关于「竞态」：这里靠 queryKey 丢弃过期结果，**并未取消**在飞行的旧请求
+ * （要真取消得把 useQuery 的 `signal` 透传到 api 层的 axios 配置，会带动所有 api 函数改签名）。
  */
 export function useListQuery<TData, TFilter extends Record<string, unknown>>(
   options: UseListQueryOptions<TData, TFilter>,

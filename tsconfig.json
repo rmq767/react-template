@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    // tsBuildInfoFile 只在开了 incremental 时才会生成，两者配套才有意义
+    "incremental": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
     "target": "ES2022",
     "useDefineForClassFields": true,

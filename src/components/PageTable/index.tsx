@@ -17,7 +17,10 @@ export interface PageTableProps<T> {
   title?: ReactNode;
   scroll?: TableProps<T>['scroll'];
   size?: TableProps<T>['size'];
-  /** 大数据量虚拟滚动，antd v6 Table 原生支持 */
+  /**
+   * 大数据量虚拟滚动，antd v6 Table 原生支持。
+   * ⚠️ 生效前提：必须同时传**数值型** `scroll.x` 与 `scroll.y`（只传 virtual 不生效甚至布局错乱）。
+   */
   virtual?: boolean;
 }
 

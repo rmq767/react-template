@@ -19,7 +19,7 @@ export interface FilterSchemaItem {
 
 export interface SearchFormProps<F extends Record<string, unknown>> {
   schema: FilterSchemaItem[];
-  /** 当前已生效的筛选值（来自 URL） */
+  /** 当前已生效的筛选值（来自列表状态） */
   values: F;
   /** 默认值，用于「重置」时清空草稿 */
   defaultValues: F;
@@ -33,16 +33,16 @@ const DATE_FORMAT = 'YYYY-MM-DD';
 
 /**
  * 纯受控 + 草稿模式的搜索表单：
- * 内部维护 draft，点「查询」才把草稿提交给 URL，避免输入即请求。
+ * 内部维护 draft，点「查询」才把草稿提交给上层状态，避免输入即请求。
  */
 export default function SearchForm<F extends Record<string, unknown>>(props: SearchFormProps<F>) {
   const { schema, values, defaultValues, onSubmit, onReset, extra } = props;
   // 草稿箱 ≈ 一个 ref；但 React 状态不可变，改值必须 setDraft 整体新对象，不能直接改属性
   const [draft, setDraft] = useState<Record<string, unknown>>({ ...values });
 
-  // 外部筛选变化（点查询、浏览器前进后退、重置）时回填草稿
-  // ≈ Vue 的 watch(values, 回填表单)；values 引用已由 useUrlFilter 的 useMemo 稳定，
-  // 无需再 JSON.stringify 比较，直接依赖 values。
+  // 外部筛选变化（点查询、重置）时回填草稿
+  // ≈ Vue 的 watch(values, 回填表单)；useListFilter 里 filter 单独成态，
+  // 翻页只换 page/pageSize，不会换 values 引用，不会把用户未提交的草稿打掉。
   useEffect(() => {
     setDraft(structuredClone(values));
   }, [values]);
@@ -60,8 +60,9 @@ export default function SearchForm<F extends Record<string, unknown>>(props: Sea
           placeholder={item.placeholder ?? `请选择${item.label}`}
           options={item.options}
           // 筛选 store 里「未选」是空字符串，而 antd Select 只认 undefined/null 才显示 placeholder，
-          // 传 '' 会被当成「选中了一个不存在的选项」从而渲染成空白
-          value={(value as string | undefined) || undefined}
+          // 传 '' 会被当成「选中了一个不存在的选项」从而渲染成空白。
+          // 只转空串/空值，不能用 || undefined：那会把合法的数值 0 也当成未选，静默丢条件
+          value={value === '' || value == null ? undefined : (value as string | number)}
           onChange={next => setValue(item.name, next ?? '')}
         />
       );
@@ -93,7 +94,9 @@ export default function SearchForm<F extends Record<string, unknown>>(props: Sea
         className={styles.control}
         allowClear
         placeholder={item.placeholder ?? `请输入${item.label}`}
-        value={value as string}
+        // 必须始终受控：schema 字段若不在 defaultFilter 里，初值会是 undefined（非受控），
+        // 输入后才转受控会触发 React 告警，故兜底成空串
+        value={(value as string | undefined) ?? ''}
         onChange={event => setValue(item.name, event.target.value)}
         onPressEnter={() => onSubmit(draft as Partial<F>)}
       />

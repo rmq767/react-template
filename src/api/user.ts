@@ -1,6 +1,7 @@
 import type { PageParams, PageResult } from '@/types/common';
 import { http } from './request';
 import { mockCreateUser, mockDeleteUser, mockUpdateUser, mockUserList } from './mock';
+import { USE_MOCK } from './env';
 
 export type UserStatus = 'active' | 'inactive' | 'pending';
 
@@ -39,13 +40,12 @@ export type UserFormValues = {
   createdAt: string;
 };
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
-
 /** 日期区间拆成 startTime / endTime 传给后端，避免数组序列化歧义 */
 function toQuery(params: UserListParams): Record<string, unknown> {
   const { dateRange, ...rest } = params;
-  const [startTime, endTime] = dateRange ?? [];
-  return { ...rest, startTime, endTime };
+  const [rangeStart, rangeEnd] = dateRange ?? [];
+  // rest 里已经带了调用方直传的 startTime/endTime，展开在前；dateRange 优先，但没选时不能把直传值盖成 undefined
+  return { ...rest, ...(rangeStart ? { startTime: rangeStart, endTime: rangeEnd } : {}) };
 }
 
 export function fetchUserList(params: UserListParams) {

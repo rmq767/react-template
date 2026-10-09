@@ -5,7 +5,7 @@ description: 用 React 19 + Ant Design 6 + TypeScript + @tanstack/react-query �
 
 # 列表页 CRUD（react-antd-starter）
 
-以 `src/pages/UserList` 为黄金模板，配置驱动地新建一个列表页。**核心三个 hook（`useUrlFilter` / `useListQuery` / `useTableList`）不需要改**，只需新增 api 模块、页面目录、路由条目。
+以 `src/pages/UserList` 为黄金模板，配置驱动地新建一个列表页。**核心三个 hook（`useListFilter` / `useListQuery` / `useTableList`）不需要改**，只需新增 api 模块、页面目录、路由条目。
 
 页面目录固定结构（新页一律照此，不要扁平到页面根）：
 
@@ -25,10 +25,13 @@ src/pages/<Entity>List/
 
 ## 心智对照（Vue3 → 本项目）
 
-- 请求生命周期（loading/error/缓存/翻页/竞态）全交给 `useTableList` + react-query，**页面里不写** `try/catch`、不写 `loading.value=...`。
-- 筛选与分页写进 **URL**（不是 store），天然可分享、刷新不丢、后退还原。
+- 请求生命周期（loading/error/缓存/翻页保留旧数据）全交给 `useTableList` + react-query，**页面里不写** `try/catch`、不写 `loading.value=...`。
+- 错误 UI 也不写在页面：查询失败由 `api/request.ts` 的 response 拦截器全局 toast（401 自动登出），写操作失败才在 `useMutation.onError` 给定制文案。
+- 筛选与分页由 `useListFilter` 以**组件内 `useState`** 持有（不是 store、不写 URL）：进页面即空筛选 + `page=1` + `pageSize=10`；代价是不再可分享、刷新即丢、后退不还原。
 - `DEFAULT_FILTER` / `SCHEMA` / `QUERY_KEY` 必须定义在**组件外**。
 - 列表**不缓存**（`staleTime: 0`）：回到页面自动重拉最新 ≈ Vue keep-alive 的 `activated` 手动重拉。
+- 服务端分页下**不要给列写客户端 `sorter`**（只能排当前页，结果是错的）；要排序就把 `sortField/sortOrder` 放进筛选交给后端。
+- 状态/部门这类下拉的 label 只放 `constants/dict`（表格 Tag 文案也从那里取），不要第二份真相。
 
 ## 步骤
 
@@ -38,6 +41,7 @@ src/pages/<Entity>List/
 import type { PageParams, PageResult } from '@/types/common'
 import { http } from './request'
 import { mockXxxList /* ... */ } from './mock'
+import { USE_MOCK } from './env' // mock 开关与 delay 已集中一处，别再在 api 文件里重复定义
 
 export type XxxStatus = 'active' | 'inactive'
 
@@ -58,13 +62,12 @@ export type XxxFilter = {
 export type XxxListParams = XxxFilter & PageParams & { startTime?: string; endTime?: string }
 export type XxxFormValues = Omit<XxxInfo, 'id'>
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
-
 // 日期区间拆成 startTime/endTime 传后端，避免数组序列化歧义
 function toQuery(params: XxxListParams): Record<string, unknown> {
   const { dateRange, ...rest } = params
-  const [startTime, endTime] = dateRange ?? []
-  return { ...rest, startTime, endTime }
+  const [rangeStart, rangeEnd] = dateRange ?? []
+  // rest 已带了调用方直传的 startTime/endTime；dateRange 优先，但没选时不能把直传值盖成 undefined
+  return { ...rest, ...(rangeStart ? { startTime: rangeStart, endTime: rangeEnd } : {}) }
 }
 
 export function fetchXxxList(params: XxxListParams) {
@@ -113,8 +116,8 @@ export default function XxxListPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<XxxInfo | null>(null)
 
-  // query 用于读取错误态（isError / error / refetch）
-  const { filter, dataSource, loading, pagination, submitFilter, resetFilter, query } =
+  // 页面不写错误 UI：查询失败由 api/request.ts 的 response 拦截器全局 toast
+  const { filter, dataSource, loading, pagination, submitFilter, resetFilter } =
     useTableList<XxxInfo, XxxFilter>({
       queryKey: QUERY_KEY,
       api: fetchXxxList,
@@ -178,12 +181,6 @@ export default function XxxListPage() {
           </Button>
         }
       />
-
-      {query.isError && (
-        <div style={{ marginBottom: 12 }}>
-          <Button onClick={() => query.refetch()}>加载失败，点击重试</Button>
-        </div>
-      )}
 
       <PageTable<XxxInfo>
         title="XXX 列表"
@@ -323,7 +320,7 @@ export default function XxxFormModal({ open, record, onCancel, onSuccess: onSave
 ## 反例（不要这样写）
 
 - ❌ 在页面里 `useState(loading)` + `useEffect(() => fetch())` 手写请求生命周期。
-- ❌ 把筛选/分页塞进 zustand store（应写进 URL）。
+- ❌ 把筛选/分页塞进 zustand store（应由 `useListFilter` 以组件内 `useState` 持有）。
 - ❌ 删除 `useListQuery` 的 `staleTime: 0` 或 `useTableList` 的 `nonce`（会导致回到页面不刷新 / 点查询无反应）。
 - ❌ `DEFAULT_FILTER`/`SCHEMA` 定义在组件内（每次 render 新引用）。
 - ❌ 交互回调不做 `useCallback`、`columns` 不做 `useMemo`（本 App 未启用 React Compiler，整表会随每次 render 重建）。
@@ -332,4 +329,4 @@ export default function XxxFormModal({ open, record, onCancel, onSuccess: onSave
 
 ## 验证
 
-`pnpm typecheck` → `pnpm lint` → `pnpm build`；`pnpm dev` 手测：点查询发一次请求、翻页不闪白、重置回第一页、增删改后自动刷新、筛选写进 URL、失败有重试。
+`pnpm typecheck` → `pnpm lint` → `pnpm build`；`pnpm dev` 手测：点查询发一次请求、翻页不闪白、重置回第一页、增删改后自动刷新、**输入未点查询时翻页草稿不丢**。

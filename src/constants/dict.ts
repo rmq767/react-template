@@ -21,8 +21,18 @@ export const DEPARTMENT_OPTIONS: DictOption[] = USER_DEPARTMENTS.map(item => ({
 
 export const ROLE_OPTIONS: DictOption[] = USER_ROLES.map(item => ({ label: item, value: item }));
 
-export const STATUS_OPTIONS: DictOption[] = [
-  { label: '正常', value: 'active' },
-  { label: '停用', value: 'inactive' },
-  { label: '待审核', value: 'pending' },
-];
+/**
+ * 状态文案单一来源：下拉选项与表格 Tag 都从这里取。
+ * 以前 dict 写一份 label、columns 的 STATUS_MAP 再写一份，新增状态时很容易改漏。
+ */
+export const STATUS_LABELS: Record<UserStatus, string> = {
+  active: '正常',
+  inactive: '停用',
+  pending: '待审核',
+};
+
+/** 取值以 USER_STATUSES 为唯一来源派生，避免枚举与 mock 数据对不上 */
+export const STATUS_OPTIONS: DictOption[] = USER_STATUSES.map(value => ({
+  label: STATUS_LABELS[value],
+  value,
+}));

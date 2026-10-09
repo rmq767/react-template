@@ -16,7 +16,7 @@
   width: 100%;
 }
 
-.layer-row {
+.layerRow {
   margin-block-end: 0;
 }
 
@@ -31,20 +31,22 @@
 .row {
   padding-block-end: $space-sm;
   border-block-end: 1px dashed $color-border;
-
-  &:last-child {
-    padding-block-end: 0;
-    border-block-end: 0;
-  }
 }
 
-.row-head {
+// antd Space 会给每个子元素再包一层 .ant-space-item，.row 永远是包裹层的唯一子元素，
+// 所以 :last-child 必须挂在包裹层上；写在 .row 上会让每一行都被当成最后一行、分隔线全部消失
+:global(.ant-space-item:last-child) .row {
+  padding-block-end: 0;
+  border-block-end: 0;
+}
+
+.rowHead {
   @include flex-between;
 
   gap: $space-sm;
 }
 
-.row-desc {
+.rowDesc {
   display: block;
   font-size: 12px;
 }

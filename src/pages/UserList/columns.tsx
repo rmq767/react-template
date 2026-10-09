@@ -1,11 +1,13 @@
 import { Button, Space, Tag, Typography } from 'antd';
 import type { TableColumnsType } from 'antd';
 import type { UserInfo, UserStatus } from '@/api/user';
+import { STATUS_LABELS } from '@/constants/dict';
 
-export const STATUS_MAP: Record<UserStatus, { text: string; color: string }> = {
-  active: { text: '正常', color: 'success' },
-  inactive: { text: '停用', color: 'default' },
-  pending: { text: '待审核', color: 'processing' },
+/** 只存色板：文案统一取 constants/dict 的 STATUS_LABELS，不留第二份真相 */
+const STATUS_COLORS: Record<UserStatus, string> = {
+  active: 'success',
+  inactive: 'default',
+  pending: 'processing',
 };
 
 export function buildColumns(handlers: {
@@ -30,7 +32,8 @@ export function buildColumns(handlers: {
       dataIndex: 'status',
       width: 100,
       render: (status: UserStatus) => (
-        <Tag color={STATUS_MAP[status].color}>{STATUS_MAP[status].text}</Tag>
+        // 类型上的 Record 保证不了运行时：后端扩枚举或返回脏数据时，这里取不到值不能让整表崩
+        <Tag color={STATUS_COLORS[status] ?? 'default'}>{STATUS_LABELS[status] ?? status}</Tag>
       ),
     },
     { title: '创建时间', dataIndex: 'createdAt', width: 130 },
@@ -39,7 +42,8 @@ export function buildColumns(handlers: {
       dataIndex: 'loginCount',
       width: 110,
       align: 'right',
-      sorter: (a, b) => a.loginCount - b.loginCount,
+      // 不写客户端 sorter：列表是服务端分页，sorter 只能排「当前页这 10 条」，跨页结果是错的。
+      // 要全局排序就把 sortField/sortOrder 放进 UserFilter 交给后端（配 antd 的 onChange 取排序信息）。
     },
     {
       title: '操作',

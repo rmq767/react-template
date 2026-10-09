@@ -12,7 +12,7 @@ import { buildColumns } from './columns';
 import UserFormModal from './components/UserFormModal';
 
 /**
- * 必须定义在组件外部：它同时是「默认值」和「URL 参数白名单」。
+ * 必须定义在组件外部：它是筛选「默认值」兼重置目标。
  * ≈ Vue 里别把常量写在 setup 里反复重建；React 中对象每次 render 都是新引用，
  * 提到模块级才能保持引用稳定。
  */
@@ -35,7 +35,7 @@ const USER_LIST_QUERY_KEY = 'user-list';
 
 /**
  * 列表页范式：整页只有「配置」和「渲染」，没有任何请求生命周期代码。
- * loading / error / 缓存 / 翻页 / 筛选 URL 同步全部由 useTableList + TanStack Query 承担。
+ * loading / error / 缓存 / 翻页 / 筛选状态全部由 useTableList + TanStack Query 承担。
  */
 export default function UserListPage() {
   const { message, modal } = App.useApp();
@@ -123,7 +123,10 @@ export default function UserListPage() {
             <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
               新增用户
             </Button>
-            <Button icon={<DownloadOutlined />}>导出</Button>
+            {/* 占位：导出还没实现。先置 disabled 避免被当成可用功能误点 */}
+            <Button icon={<DownloadOutlined />} disabled title="TODO: 待实现导出">
+              导出
+            </Button>
           </Space>
         }
       />

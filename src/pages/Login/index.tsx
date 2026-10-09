@@ -24,7 +24,11 @@ export default function LoginPage() {
   const [form] = Form.useForm<LoginPayload>();
 
   // AuthGuard 用 encodeURIComponent 存的原地址；URLSearchParams.get 会自动解码
-  const redirect = searchParams.get('redirect') || '/';
+  // ⚠️ redirect 是用户可控的地址栏参数，必须限定「单个 / 开头且不以 // 开头」的站内路径：
+  // ?redirect=//evil.com 会被当成跳外域，pushState 直接抛 SecurityError（登录后白屏）
+  const rawRedirect = searchParams.get('redirect');
+  const redirect =
+    rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/';
 
   const loginMutation = useMutation({
     mutationFn: login,

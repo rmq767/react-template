@@ -1,6 +1,7 @@
 import { USER_DEPARTMENTS, USER_ROLES, USER_STATUSES } from '@/constants/dict';
-import type { PageParams, PageResult } from '@/types/common';
+import type { PageResult } from '@/types/common';
 import type { UserInfo, UserListParams, UserFormValues } from './user';
+import { delay } from './env';
 
 const SURNAME = ['张', '李', '王', '刘', '陈', '杨', '赵', '黄', '周', '吴'];
 const GIVEN = ['伟', '芳', '娜', '敏', '静', '磊', '洋', '勇', '艳', '杰'];
@@ -33,12 +34,8 @@ function createUsers(count: number): UserInfo[] {
 
 const DB = createUsers(57);
 
-const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
-
 /** 模拟后端分页接口：过滤 -> 排序 -> 分页 */
-export async function mockUserList(
-  params: UserListParams & PageParams,
-): Promise<PageResult<UserInfo>> {
+export async function mockUserList(params: UserListParams): Promise<PageResult<UserInfo>> {
   await delay(300);
 
   const { name, department, status, dateRange, startTime, endTime, page, pageSize } = params;

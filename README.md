@@ -66,7 +66,7 @@ src/
 ├── constants/dict.ts     # 业务字典：部门、角色、状态（筛选项与 mock 数据同源）
 ├── hooks/
 │   ├── useTableList.ts   # 列表页门面：组合下面两层 + antd 分页 + 查询动作计数
-│   ├── useUrlFilter.ts   # URL 层：筛选/分页 <-> 地址栏（可分享、刷新不丢、后退还原）
+│   ├── useListFilter.ts  # 状态层：筛选/分页存组件内 useState（默认空筛选 + page=1 + pageSize=10，不写地址栏）
 │   ├── useListQuery.ts   # 数据层：纯 react-query 封装（staleTime:0 实时、keepPreviousData）
 │   └── useAccess.ts      # 角色判断 + 过滤后的菜单数据
 ├── icons/svg/            # 本地 svg 图标源文件（文件名即图标名，新增不需注册）
@@ -109,9 +109,9 @@ src/
 | 组件内部临时状态 | `useState` | 弹窗开关、表单草稿 |
 | 服务端数据 | TanStack Query | 列表、详情、字典 |
 | 跨页面 UI 状态 | Zustand | 主题、菜单折叠、登录用户 |
-| 可分享的页面状态 | **URL search params** | 筛选条件、页码、排序 |
+| 需跨页面/可分享的状态 | **URL search params** | 登录回跳 `redirect` |
 
-筛选和分页**不进 store**，直接写进 URL：链接可分享、刷新不丢、浏览器前进后退天然可用。这是 React 中后台相对 Vue 项目最明显的思路差异。
+列表的筛选和分页**不进 store、不写 URL**，由 `useListFilter` 用组件内 `useState` 持有（进页面即空筛选 + `page=1` + `pageSize=10`）；代价是链接不再可分享、刷新即丢、后退不还原（产品已确认接受）。
 
 ### 2. 样式分层（优先级从高到低）
 
@@ -142,12 +142,12 @@ const { filter, dataSource, loading, pagination, submitFilter, resetFilter, quer
   })
 ```
 
-- **查询**：`SearchForm` 内部维护草稿，点「查询」才提交到 URL（输入不会疯狂请求）。点查询时 `useTableList` 会自增一个 `nonce`，即使筛选完全没变也会重新发一次请求。
+- **查询**：`SearchForm` 内部维护草稿，点「查询」才提交到组件状态（输入不会疯狂请求）。点查询时 `useTableList` 会自增一个 `nonce`，即使筛选完全没变也会重新发一次请求。
 - **实时**：列表 `staleTime: 0`，每次进页面/回到页面都重新拉最新（≈ Vue keep-alive 里在 `activated` 手动重拉，这里交给框架）。
 - **翻页**：`keepPreviousData` 保证翻页时旧数据不闪白。
 - **新增/编辑**：同一个 `UserFormModal` 组件，`record === null` 即新增模式。
 - **删除/提交后刷新**：`queryClient.invalidateQueries({ queryKey: [USER_LIST_QUERY_KEY] })`，不手写 reload。
-- **错误**：列表请求失败由 `query.isError` 暴露，页面用 `Alert` 提示并给「重试」按钮。
+- **错误**：页面不写错误 UI（不挂 `Alert` / 「重试」）。查询失败由 `api/request.ts` 的 **response 拦截器**全局 toast（同文案 1.5s 去重），401 直接 `signOut()` 并靠 `AuthGuard` 送回 `/login`；写操作的失败文案仍由调用方 `useMutation.onError` 给。
 
 ### 5.1 新增一个 CRUD 列表页 checklist
 
@@ -158,6 +158,7 @@ const { filter, dataSource, loading, pagination, submitFilter, resetFilter, quer
 3. `columns.tsx`：`buildColumns` 纯函数；交互回调用 `useCallback` + `columns` 用 `useMemo`（见 5.2）。
 4. `components/<Entity>FormModal.tsx`：新增/编辑一体，Modal 打开时 `resetFields`。页面私有组件放页面自己的 `components/`，不进 `src/components`。
 5. `src/router/access.tsx` 的 `ACCESS_ROUTES` 加一条（`roles` + `lazy`）。
+6. 错误处理不用写：查询失败由 `request.ts` 的响应拦截器全局 toast（见第五节「错误」条）。页面只处理业务分支（登录失败、表单校验）。
 
 ### 5.2 性能 / 引用稳定性约定
 
@@ -229,9 +230,12 @@ const { filter, dataSource, loading, pagination, submitFilter, resetFilter, quer
 6. **antd CSS 变量挂在 `.ant-app` 而非 `:root`**：业务 SCSS 使用 `var(--ant-*)` 必须位于 `ConfigProvider` 子树内。
 7. **Sider 自带折叠触发条不跟随暗色算法**：本项目设 `trigger={null}`，折叠统一走 Header 按钮。
 8. **DatePicker 与字符串值**：表单 store 存 `YYYY-MM-DD` 字符串，通过 `normalize` + `getValueProps` 与控件的 Dayjs 双向转换。
-9. **Select 的 placeholder 只在值为 `undefined`/`null` 时出现**：本项目用空字符串 `''` 表示「未选」（便于 URL 与提交载荷保持一致），而 antd 会把 `''` 当成「选中了一个不存在的选项」渲染成空白。因此搜索区用 `value={v || undefined}`、弹窗表单用 `getValueProps={v => ({ value: v || undefined })}` 在控件层做一次转换。新增下拉控件时注意同一个坑。
+9. **Select 的 placeholder 只在值为 `undefined`/`null` 时出现**：本项目用空字符串 `''` 表示「未选」（与提交给后端的载荷保持一致），而 antd 会把 `''` 当成「选中了一个不存在的选项」渲染成空白。因此搜索区用 `value === '' || value == null ? undefined : value`、弹窗表单用 `getValueProps={v => ({ value: v || undefined })}` 在控件层做一次转换。**别统一写成 `v || undefined`**：选项值含合法 `0` 时会被当成未选，静默丢掉筛选条件（表单里 `''` 是唯一空值时才可以用）。
 10. **「只有内容区滚动」需要三个条件同时成立**：外层 Layout 用 `height: 100vh`（用 `min-height` 会被内容撑高，变成整页滚动、Header/Sider 跟着跑）+ 内层 Layout 显式 `min-height: 0`（flex 子项默认 `min-height: auto`，不归零就不会产生内部滚动）+ Content 自身 `overflow: auto`。见 `src/layouts/BasicLayout.module.scss`。
 11. **业务页面不限最大宽度**：`.page` 只留 padding，宽度铺满内容区（需求明确不要 1440 封顶）。需要限宽时在具体页面自己加，不要放进全局类。
+12. **`filter` 的引用稳定性是功能要求，不是性能优化**：`useListFilter` 把 `filter` 与 `page/pageSize` 拆成各自独立的 `useState`。如果合并成一个对象、翻页也重建 `filter`，`SearchForm` 的 `useEffect(..., [values])` 就会被触发、把用户「输了但还没点查询」的草稿清空。
+13. **退出登录必须同时 `queryClient.clear()`**：`QueryClient` 是模块级单例且 `queryKey` 不带用户标识，只清 auth store 会让下一个账号短暂看到上一个账号的列表数据。
+14. **`redirect` 这类回跳地址必须限定站内**：只接受单个 `/` 开头且不以 `//` 开头的路径，否则 `?redirect=//evil.com` 会被当成跳外域、`pushState` 抛 SecurityError（登录后白屏）。
 
 ---
 
