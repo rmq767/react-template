@@ -58,7 +58,7 @@ src/
 │   ├── auth.ts           # 登录接口（含三个演示账号）
 │   ├── user.ts           # 接口定义 + 类型（UserInfo / UserFilter / UserFormValues）
 │   └── mock.ts           # 内存 mock，供无后端时演示
-├── components/
+├── components/           # 跨页面复用的无业务组件（不得 import api，只吃配置/props）
 │   ├── SearchForm/       # 配置驱动筛选表单（input / select / dateRange）
 │   └── PageTable/        # 纯展示表格，不碰数据加载
 ├── constants/dict.ts     # 业务字典：部门、角色、状态（筛选项与 mock 数据同源）
@@ -71,7 +71,11 @@ src/
 ├── pages/
 │   ├── Login/            # 登录页（布局外，独立整页）
 │   ├── Home/             # 技术栈总览
-│   ├── UserList/         # 列表页范式（含新增/编辑弹窗）
+│   ├── UserList/         # 列表页范式
+│   │   ├── index.tsx     # 只装配：组件外 DEFAULT_FILTER / SCHEMA / QUERY_KEY
+│   │   ├── columns.tsx   # buildColumns 纯列配置（非组件，保持小写、留在页面根）
+│   │   └── components/
+│   │       └── UserFormModal.tsx  # 页面私有业务组件（依赖 api，不进 src/components）
 │   ├── Audit/            # 操作日志（仅 admin，权限演示用）
 │   ├── Forbidden/        # 403
 │   └── NotFound/         # 404
@@ -86,6 +90,8 @@ src/
 ├── types/                # common.ts（分页/响应）+ auth.ts（角色/登录）
 └── App.tsx               # ConfigProvider + QueryClientProvider + RouterProvider
 ```
+
+组件归位只按两个判据：**是否跨页复用**、**是否带业务**。带实体语义（依赖 `api/<entity>`）的弹窗、抽屉一律放 `pages/<Page>/components/`，并用相对路径 `./components/UserFormModal` 引入；只有真的被第二个页面用到（rule of two）才提升到 `src/components`。页面私有组件默认扁平 PascalCase 文件，需要自带 `index.module.scss` 或再拆子片段时才升级成 `components/Xxx/index.tsx`。
 
 ---
 
@@ -145,7 +151,7 @@ const { filter, dataSource, loading, pagination, submitFilter, resetFilter, quer
 1. `src/api/<entity>.ts`：定义 `type XxxFilter`（必须 `type`，见坑#3）、`XxxInfo`、`fetchXxxList / create / update / delete`。
 2. `src/pages/<Entity>List/index.tsx`：组件外 `DEFAULT_FILTER` + `SCHEMA`；`useTableList` 解构；`queryKey` 常量；`invalidateList`。
 3. `columns.tsx`：`buildColumns` 纯函数；交互回调用 `useCallback` + `columns` 用 `useMemo`（见 5.2）。
-4. `<Entity>FormModal.tsx`：新增/编辑一体，Modal 打开时 `resetFields`。
+4. `components/<Entity>FormModal.tsx`：新增/编辑一体，Modal 打开时 `resetFields`。页面私有组件放页面自己的 `components/`，不进 `src/components`。
 5. `src/router/access.tsx` 的 `ACCESS_ROUTES` 加一条（`roles` + `lazy`）。
 
 ### 5.2 性能 / 引用稳定性约定

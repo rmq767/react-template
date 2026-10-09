@@ -45,7 +45,7 @@ const GROUPS: StackGroup[] = [
     title: '工程层',
     items: [
       { name: 'ESLint', version: '10', desc: '扁平配置 + typescript-eslint 8 + react-hooks 7' },
-      { name: 'Prettier', version: '3.9', desc: '单引号 / 无分号 / 100 列' },
+      { name: 'Prettier', version: '3.9', desc: '单引号 / 带分号 / 100 列' },
       { name: 'dayjs', version: '1.11', desc: '已切 zh-cn locale，替代 moment' },
     ],
   },

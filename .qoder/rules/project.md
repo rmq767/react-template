@@ -24,10 +24,24 @@ trigger: always_on
 | Hook 文件 | camelCase，`use` 前缀 | `useTableList.ts`、`useUrlFilter.ts` |
 | 非组件工具/接口/状态模块 | 小写 | `api/request.ts`、`stores/auth.ts`、`constants/dict.ts` |
 | 含 JSX 的辅助文件 | 小写也允许，但导出的是函数则保持小写 | `pages/UserList/columns.tsx`（`buildColumns` 返回列配置） |
+| **页面私有组件** | PascalCase **扁平文件**，放 `pages/<Page>/components/` | `pages/UserList/components/UserFormModal.tsx` |
 | api 函数 | 动词开头 | `fetchXxxList` / `createXxx` / `updateXxx` / `deleteXxx` |
 | CSS Module 类名 | **camelCase** | `.searchForm`、`.actions`（Vite 默认 `localsConvention: camelCase`，kebab 也能用但统一写 camelCase） |
 
-目录职责边界：`api`（接口+类型）/ `components`（可复用组件）/ `hooks`（逻辑）/ `pages/<PascalCase>`（页面）/ `router`（路由与权限源）/ `stores`（zustand UI 状态）/ `styles`（全局 SCSS 变量与 mixin）/ `types`（共享类型）/ `constants`（业务字典）。
+目录职责边界：`api`（接口+类型）/ `components`（跨页面复用的无业务组件）/ `hooks`（跨页面逻辑）/ `pages/<PascalCase>`（页面）/ `router`（路由与权限源）/ `stores`（zustand UI 状态）/ `styles`（全局 SCSS 变量与 mixin）/ `types`（共享类型）/ `constants`（业务字典）。
+
+### 2.1 组件归位（两级 `components` 语义不同）
+
+| 位置 | 语义 | 硬判据 |
+| --- | --- | --- |
+| `src/components/` | 跨页面复用、**无业务** | 不得 `import '@/api/*'`，只吃 props/配置（例：`SearchForm`、`PageTable`） |
+| `src/pages/<Page>/components/` | 页面私有业务组件 | 允许依赖 `api`、字典、页面语义（例：`UserFormModal`） |
+
+- **归位判据不是「它是不是组件」，而是「是否跨页复用 + 是否带业务」**；带业务实体（依赖某个 `api/<entity>`）的弹窗/抽屉一律留在页面目录，不进 `src/components`。
+- 提到 `src/components` 的门槛是 **rule of two**：真的被第二个页面用到才提，不做提前通用化。
+- `components/` 只收返回 JSX 的组件；列配置 `columns.tsx` 与 `DEFAULT_FILTER`/`SCHEMA`/`QUERY_KEY` 等模块级常量留在页面根，页面私有 hook 放 `pages/<Page>/hooks/useXxx.ts`。
+- 页面私有组件**必须用相对路径**引入（`./components/UserFormModal`），不得写成 `@/pages/...`；**禁止**建 `components/index.ts` barrel（会把整目录拉进依赖图，削弱路由 `lazy` 的代码分割边界）。
+- 私有组件默认扁平文件；当它需要自带 `index.module.scss` 或再拆子片段时，就地升级为 `components/Xxx/index.tsx`（形态与 `src/components/SearchForm` 一致）。
 
 ## 3. 状态分层（迁移最易踩，务必遵守）
 
@@ -54,6 +68,7 @@ trigger: always_on
 ## 5. 列表页范式（强制）
 
 - 列表页必须走 `useTableList + SearchForm + PageTable`；**页面内不得写任何请求生命周期**（loading/try-catch/reload）。
+- 列表页固定文件结构：`pages/<Entity>List/index.tsx` + `columns.tsx` + `components/<Entity>FormModal.tsx`（见 2.1）。
 - `useTableList` 已分层：`useUrlFilter`（URL↔状态）+ `useListQuery`（react-query）+ 门面。加新列表页**不改**核心 hook。
 - 列表**不缓存**：`useListQuery` 里 `staleTime: 0`（数据实时；全局默认 30s 只留给详情/字典）。
 - `nonce` 表达「一次显式查询动作」：点查询/重置自增，即使筛选没变也发一次请求。**不要删除**。
@@ -77,4 +92,4 @@ trigger: always_on
 ## 8. 语言与注释约定
 
 - 注释用中文，力求简短；**只在 React 认知门槛处**加一行 `≈ Vue: xxx` 对照，避免刷屏。
-- 遵循 Prettier：单引号 / 无分号 / 100 列。
+- 遵循 Prettier（以 `.prettierrc.json` 为准）：单引号 / **带分号（`semi: true`）** / 100 列 / `arrowParens: avoid`。

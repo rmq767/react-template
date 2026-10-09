@@ -7,6 +7,18 @@ description: 用 React 19 + Ant Design 6 + TypeScript + @tanstack/react-query �
 
 以 `src/pages/UserList` 为黄金模板，配置驱动地新建一个列表页。**核心三个 hook（`useUrlFilter` / `useListQuery` / `useTableList`）不需要改**，只需新增 api 模块、页面目录、路由条目。
 
+页面目录固定结构（新页一律照此，不要扁平到页面根）：
+
+```
+src/pages/<Entity>List/
+├── index.tsx                        # 只装配 + 组件外常量
+├── columns.tsx                      # buildColumns 纯列配置（非组件，留页面根）
+└── components/
+    └── <Entity>FormModal.tsx        # 页面私有业务组件（依赖 api）
+```
+
+页面私有组件放 `pages/<Page>/components/`，用相对路径 `./components/XxxFormModal` 引入；**不进** `src/components`（那里只收不依赖 `api` 的跨页复用件），**也不建** `components/index.ts` barrel（会削弱路由 `lazy` 的代码分割）。
+
 ## 何时用
 
 需要新建「筛选 + 表格 + 分页 + 增删改」的管理页时。对标 Vue 项目里的 `MySearch / MyTable / MyPagination` + `useSearchFilter`。
@@ -82,7 +94,7 @@ import PageTable from '@/components/PageTable'
 import { useTableList } from '@/hooks/useTableList'
 import { fetchXxxList, deleteXxx, type XxxInfo, type XxxFilter } from '@/api/xxx'
 import { buildColumns } from './columns'
-import XxxFormModal from './XxxFormModal'
+import XxxFormModal from './components/XxxFormModal'
 
 // 配置对象必须在组件外
 const QUERY_KEY = 'xxx-list'
@@ -229,7 +241,7 @@ export function buildColumns(handlers: {
 }
 ```
 
-### 4. `src/pages/<Entity>List/XxxFormModal.tsx`：新增/编辑一体
+### 4. `src/pages/<Entity>List/components/XxxFormModal.tsx`：新增/编辑一体
 
 关键点：`record === null` 即新增；Modal 会复用实例，`open` 变化时必须 `resetFields()` + `setFieldsValue()`。
 
@@ -316,6 +328,7 @@ export default function XxxFormModal({ open, record, onCancel, onSuccess: onSave
 - ❌ `DEFAULT_FILTER`/`SCHEMA` 定义在组件内（每次 render 新引用）。
 - ❌ 交互回调不做 `useCallback`、`columns` 不做 `useMemo`（本 App 未启用 React Compiler，整表会随每次 render 重建）。
 - ❌ 给 `handleDelete` 依赖整个 `removeMutation` 对象（每次 render 变，击穿 memo）；应解构 `mutateAsync`。
+- ❌ 把依赖 `api/<entity>` 的业务弹窗放进 `src/components`，或给页面私有组件建 barrel / 用 `@/pages/...` 引入。
 
 ## 验证
 

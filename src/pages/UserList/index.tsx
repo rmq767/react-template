@@ -8,7 +8,8 @@ import { useTableList } from '@/hooks/useTableList';
 import { DEPARTMENT_OPTIONS, STATUS_OPTIONS } from '@/constants/dict';
 import { deleteUser, fetchUserList, type UserInfo, type UserFilter } from '@/api/user';
 import { buildColumns } from './columns';
-import UserFormModal from './UserFormModal';
+// 页面私有组件放 ./components，用相对路径表明归属（不走 @/，也不加 barrel）
+import UserFormModal from './components/UserFormModal';
 
 /**
  * 必须定义在组件外部：它同时是「默认值」和「URL 参数白名单」。
@@ -95,6 +96,14 @@ export default function UserListPage() {
     setFormOpen(true);
   }, []);
 
+  // —— 对照理解：去掉 useCallback + useMemo 会怎样 ——
+  // React 函数体每次 render 都从头重跑（不同于 Vue setup 只跑一次），所以：
+  // ❌ 不 memo：每次 render（打开弹窗、loading 变化等）都会
+  //    const openEdit = (row) => {...}       // 新函数、新引用
+  //    const columns  = buildColumns({...})  // 新数组、新引用
+  //    → <PageTable columns={新引用}> 判定「列变了」→ 整张表无谓重渲染。
+  // ✅ 加 memo：依赖不变时跨 render 复用同一引用，表格不再重建。
+  // ⚠️ 二者必须配套：columns 的依赖是 openEdit/handleDelete，若它们每次 render 都变，useMemo 也白做。
   // 列定义携带交互回调，用 useMemo 缓存：只要 openEdit/handleDelete 引用不变，整表不重建
   const columns = useMemo(
     () => buildColumns({ onEdit: openEdit, onDelete: handleDelete }),
@@ -111,10 +120,10 @@ export default function UserListPage() {
         onReset={resetFilter}
         extra={
           <Space>
-            <Button icon={<DownloadOutlined />}>导出</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
               新增用户
             </Button>
+            <Button icon={<DownloadOutlined />}>导出</Button>
           </Space>
         }
       />
