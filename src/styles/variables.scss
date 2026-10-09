@@ -1,0 +1,26 @@
+// 设计变量：仅放 $ 变量，避免与 mixins.scss 的 @mixin 命名冲突
+// 该文件由 vite.config.ts 的 additionalData 自动注入到所有 scss 中，业务文件无需 @use
+
+// 间距（对应 antd token 的 sizeStep 体系）
+$space-xs: 4px;
+$space-sm: 8px;
+$space-md: 16px;
+$space-lg: 24px;
+$space-xl: 32px;
+
+// 圆角
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+
+// 业务布局尺寸
+$header-height: 56px;
+$sider-width: 220px;
+$page-max-width: 1440px;
+
+// 直接复用 antd v6 的 CSS 变量，保证与组件库主题（含暗色）自动同步
+// antd 变量在运行时由 ConfigProvider 的 theme.cssVar 注入到根节点
+$color-bg-container: var(--ant-color-bg-container);
+$color-border: var(--ant-color-border-secondary);
+$color-text: var(--ant-color-text);
+$color-text-secondary: var(--ant-color-text-secondary);

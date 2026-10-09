@@ -1,0 +1,26 @@
+// mixins 不在 Vite 的全局注入列表里（见 vite.config.ts），需要手动 @use。
+// 注意：这里必须用相对路径，Sass 不认识 Vite 的 "@" 别名。
+@use '../../styles/mixins.scss' as *;
+
+.card {
+  margin-block-start: $space-md;
+
+  // antd v6 推荐用语义化 classNames/styles 精确命中内部 DOM，
+  // 比写 :global(.ant-card-body) 覆盖更稳定（v6 整理过内部结构）。
+  :global(.ant-card-body) {
+    padding: $space-md;
+  }
+}
+
+.toolbar {
+  @include flex-between;
+
+  margin-block-end: $space-sm;
+}
+
+.table {
+  :global(.ant-table-thead > tr > th) {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+}

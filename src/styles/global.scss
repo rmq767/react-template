@@ -1,0 +1,40 @@
+/* 全局基础样式：只负责 reset 和页面骨架，组件外观全部交给 antd token */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei',
+    sans-serif;
+  background: var(--ant-color-bg-layout);
+  color: var(--ant-color-text);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+// 通用页面容器
+.page {
+  padding: $space-md;
+  max-width: $page-max-width;
+  margin: 0 auto;
+}
+
+// 路由懒加载占位
+.page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+}

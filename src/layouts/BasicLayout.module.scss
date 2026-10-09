@@ -1,0 +1,36 @@
+@use '../styles/mixins.scss' as *;
+
+.layout {
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $header-height;
+  padding-inline: $space-md;
+  line-height: $header-height;
+  background: $color-bg-container;
+  border-block-end: 1px solid $color-border;
+}
+
+.title {
+  font-size: 16px;
+}
+
+.body {
+  overflow: hidden;
+}
+
+.sider {
+  border-inline-end: 1px solid $color-border;
+  background: $color-bg-container;
+}
+
+.content {
+  overflow: auto;
+  padding: 0;
+
+  @include scrollbar;
+}

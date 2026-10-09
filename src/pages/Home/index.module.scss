@@ -1,0 +1,50 @@
+@use '../../styles/mixins.scss' as *;
+
+.title {
+  margin-block-end: 4px;
+}
+
+.desc {
+  margin-block-end: $space-md;
+}
+
+.alert {
+  margin-block-end: $space-md;
+}
+
+.layer {
+  width: 100%;
+}
+
+.layer-row {
+  margin-block-end: 0;
+}
+
+.card {
+  height: 100%;
+}
+
+.list {
+  width: 100%;
+}
+
+.row {
+  padding-block-end: $space-sm;
+  border-block-end: 1px dashed $color-border;
+
+  &:last-child {
+    padding-block-end: 0;
+    border-block-end: 0;
+  }
+}
+
+.row-head {
+  @include flex-between;
+
+  gap: $space-sm;
+}
+
+.row-desc {
+  display: block;
+  font-size: 12px;
+}

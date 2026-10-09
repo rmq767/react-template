@@ -1,0 +1,41 @@
+.search {
+  padding: $space-md;
+  background: $color-bg-container;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+}
+
+.item {
+  display: flex;
+  width: 100%;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 10px;
+  color: $color-text-secondary;
+  font-size: 13px;
+  white-space: nowrap;
+  background: var(--ant-color-fill-alter);
+  border: 1px solid var(--ant-color-border);
+  border-right: 0;
+  border-radius: $radius-sm 0 0 $radius-sm;
+}
+
+// Space.Compact 的第二个子元素需要吃掉剩余宽度
+.control {
+  flex: 1;
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: $space-md;
+}
+
+.actions-between {
+  margin-inline-start: auto;
+}
