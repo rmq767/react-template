@@ -13,6 +13,7 @@
 | 构建 | Vite | 8.3.4 | 底层已是 Rolldown |
 | UI | Ant Design | 6.6.5 | v6 原生支持 React 19，无需 `@ant-design/v5-patch-for-react-19` |
 | 图标 | @ant-design/icons | 6.3.4 | antd v6 必须配套 icons v6 |
+| 本地图标 | vite-plugin-svg-icons-ng | 1.10.0 | `src/icons/svg` 下的 svg 打成一张雪碧图，用 `<SvgIcon name="xxx" />` 引用 |
 | 路由 | react-router-dom | 7.18.4 | data router（`createBrowserRouter`） |
 | 服务端状态 | @tanstack/react-query | 5.104.1 | 列表/详情的 loading、error、缓存、竞态 |
 | 客户端状态 | zustand | 5.0.15 | 仅 UI 状态，已启用 `persist` |
@@ -60,6 +61,7 @@ src/
 │   └── mock.ts           # 内存 mock，供无后端时演示
 ├── components/           # 跨页面复用的无业务组件（不得 import api，只吃配置/props）
 │   ├── SearchForm/       # 配置驱动筛选表单（input / select / dateRange）
+│   ├── SvgIcon/          # 雪碧图图标封装（<use href="#icon-x" />）
 │   └── PageTable/        # 纯展示表格，不碰数据加载
 ├── constants/dict.ts     # 业务字典：部门、角色、状态（筛选项与 mock 数据同源）
 ├── hooks/
@@ -67,6 +69,7 @@ src/
 │   ├── useUrlFilter.ts   # URL 层：筛选/分页 <-> 地址栏（可分享、刷新不丢、后退还原）
 │   ├── useListQuery.ts   # 数据层：纯 react-query 封装（staleTime:0 实时、keepPreviousData）
 │   └── useAccess.ts      # 角色判断 + 过滤后的菜单数据
+├── icons/svg/            # 本地 svg 图标源文件（文件名即图标名，新增不需注册）
 ├── layouts/BasicLayout.tsx
 ├── pages/
 │   ├── Login/            # 登录页（布局外，独立整页）
@@ -92,6 +95,8 @@ src/
 ```
 
 组件归位只按两个判据：**是否跨页复用**、**是否带业务**。带实体语义（依赖 `api/<entity>`）的弹窗、抽屉一律放 `pages/<Page>/components/`，并用相对路径 `./components/UserFormModal` 引入；只有真的被第二个页面用到（rule of two）才提升到 `src/components`。页面私有组件默认扁平 PascalCase 文件，需要自带 `index.module.scss` 或再拆子片段时才升级成 `components/Xxx/index.tsx`。
+
+**图标选型顺序**：能用 `@ant-design/icons` 就用它（与 antd 的 `icon` 槽位、尺寸、token 天然对齐）；只有设计稿给的私有图标、或需要与 rda-ui 共用同一套图标时，才把 `.svg` 丢进 `src/icons/svg/`，直接 `<SvgIcon name="文件名去后缀" />`，不用改任何配置。注意雪碧图的 `<use>` 只能**继承** `fill`/`stroke`：插件已开 `strokeOverride: true` 把写死的 stroke 换成 `currentColor`，但**写死 `fill` 的图标无法从外层覆盖**，入库前得先把颜色属性清掉。
 
 ---
 

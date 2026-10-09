@@ -1,11 +1,13 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import dayjs from 'dayjs'
-import 'dayjs/locale/zh-cn'
-import App from './App'
-import './styles/global.scss'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import dayjs from 'dayjs';
+import 'dayjs/locale/zh-cn';
+import App from './App';
+import './styles/global.scss';
+// 把 src/icons/svg 生成的雪碧图挂到 body（htmlMode: 'none'，所以必须显式引入）
+import 'virtual:svg-icons/register';
 
-dayjs.locale('zh-cn')
+dayjs.locale('zh-cn');
 
 createRoot(document.getElementById('root')!).render(
   // StrictMode：开发环境下会故意双次渲染/双次跑副作用，用来暴露“副作用不纯”的问题；
@@ -13,4 +15,4 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
   </StrictMode>,
-)
+);

@@ -1,39 +1,35 @@
-import { App, Avatar, Button, Dropdown, Layout, Menu, Space, Switch, Typography } from 'antd'
-import {
-  LogoutOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-} from '@ant-design/icons'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useAccess } from '@/hooks/useAccess'
-import { useAuthStore } from '@/stores/auth'
-import { useThemeStore } from '@/stores/theme'
-import styles from './BasicLayout.module.scss'
+import { App, Avatar, Button, Dropdown, Layout, Menu, Space, Switch, Typography } from 'antd';
+import { LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAccess } from '@/hooks/useAccess';
+import { useAuthStore } from '@/stores/auth';
+import { useThemeStore } from '@/stores/theme';
+import styles from './BasicLayout.module.scss';
 
-const { Header, Sider, Content } = Layout
+const { Header, Sider, Content } = Layout;
 
 export default function BasicLayout() {
-  const { message } = App.useApp()
-  const navigate = useNavigate()
-  const pathname = useLocation().pathname
+  const { message } = App.useApp();
+  const navigate = useNavigate();
+  const pathname = useLocation().pathname;
 
   // 按需订阅：一个 selector 取一个字段，避免整个 store 变化都触发重渲染
-  const dark = useThemeStore(state => state.dark)
-  const collapsed = useThemeStore(state => state.collapsed)
-  const toggleDark = useThemeStore(state => state.toggleDark)
-  const toggleCollapsed = useThemeStore(state => state.toggleCollapsed)
-  const profile = useAuthStore(state => state.profile)
-  const signOut = useAuthStore(state => state.signOut)
+  const dark = useThemeStore(state => state.dark);
+  const collapsed = useThemeStore(state => state.collapsed);
+  const toggleDark = useThemeStore(state => state.toggleDark);
+  const toggleCollapsed = useThemeStore(state => state.toggleCollapsed);
+  const profile = useAuthStore(state => state.profile);
+  const signOut = useAuthStore(state => state.signOut);
 
   // 菜单直接来自「权限过滤后的路由表」：
   // 没权限的页面既不出现在菜单，也进不去（AuthGuard 会重定向 403），两者天然一致
-  const { menuItems } = useAccess()
+  const { menuItems } = useAccess();
 
   const handleLogout = () => {
-    signOut()
-    message.success('已退出登录')
-    navigate('/login', { replace: true })
-  }
+    signOut();
+    message.success('已退出登录');
+    navigate('/login', { replace: true });
+  };
 
   return (
     <Layout className={styles.layout}>
@@ -63,7 +59,12 @@ export default function BasicLayout() {
                   label: `角色：${(profile?.roles ?? []).join(' / ') || '-'}`,
                 },
                 { type: 'divider' },
-                { key: 'logout', label: '退出登录', icon: <LogoutOutlined />, onClick: handleLogout },
+                {
+                  key: 'logout',
+                  label: '退出登录',
+                  icon: <LogoutOutlined />,
+                  onClick: handleLogout,
+                },
               ],
             }}
           >
@@ -99,5 +100,5 @@ export default function BasicLayout() {
         </Content>
       </Layout>
     </Layout>
-  )
+  );
 }

@@ -1,44 +1,44 @@
-import { App, Button, Card, Divider, Flex, Form, Input, Typography } from 'antd'
-import { LockOutlined, UserOutlined } from '@ant-design/icons'
-import { useMutation } from '@tanstack/react-query'
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
-import { login } from '@/api/auth'
-import { useAuthStore } from '@/stores/auth'
-import type { LoginPayload } from '@/types/auth'
-import styles from './index.module.scss'
+import { App, Button, Card, Divider, Flex, Form, Input, Typography } from 'antd';
+import { LockOutlined, UserOutlined } from '@ant-design/icons';
+import { useMutation } from '@tanstack/react-query';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { login } from '@/api/auth';
+import { useAuthStore } from '@/stores/auth';
+import type { LoginPayload } from '@/types/auth';
+import styles from './index.module.scss';
 
-const DEMO_PASSWORD = '123456'
+const DEMO_PASSWORD = '123456';
 
 const DEMO_ACCOUNTS = [
   { account: 'admin', desc: '全部菜单可见' },
   { account: 'editor', desc: '看不到操作日志' },
   { account: 'viewer', desc: '只能看技术栈总览' },
-]
+];
 
 export default function LoginPage() {
-  const { message } = App.useApp()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const token = useAuthStore(state => state.token)
-  const signIn = useAuthStore(state => state.signIn)
-  const [form] = Form.useForm<LoginPayload>()
+  const { message } = App.useApp();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = useAuthStore(state => state.token);
+  const signIn = useAuthStore(state => state.signIn);
+  const [form] = Form.useForm<LoginPayload>();
 
   // AuthGuard 用 encodeURIComponent 存的原地址；URLSearchParams.get 会自动解码
-  const redirect = searchParams.get('redirect') || '/'
+  const redirect = searchParams.get('redirect') || '/';
 
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: result => {
-      signIn(result)
-      message.success(`欢迎，${result.profile.name}`)
-      navigate(redirect, { replace: true })
+      signIn(result);
+      message.success(`欢迎，${result.profile.name}`);
+      navigate(redirect, { replace: true });
     },
     onError: (error: Error) => message.error(error.message || '登录失败'),
-  })
+  });
 
   // 已登录再访问登录页，直接回业务页
   if (token) {
-    return <Navigate to={redirect} replace />
+    return <Navigate to={redirect} replace />;
   }
 
   return (
@@ -58,11 +58,19 @@ export default function LoginPage() {
           disabled={loginMutation.isPending}
           onFinish={values => loginMutation.mutate(values)}
         >
-          <Form.Item label="账号" name="account" rules={[{ required: true, message: '请输入账号' }]}>
+          <Form.Item
+            label="账号"
+            name="account"
+            rules={[{ required: true, message: '请输入账号' }]}
+          >
             <Input prefix={<UserOutlined />} placeholder="请输入账号" allowClear autoFocus />
           </Form.Item>
 
-          <Form.Item label="密码" name="password" rules={[{ required: true, message: '请输入密码' }]}>
+          <Form.Item
+            label="密码"
+            name="password"
+            rules={[{ required: true, message: '请输入密码' }]}
+          >
             <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" />
           </Form.Item>
 
@@ -71,7 +79,9 @@ export default function LoginPage() {
           </Button>
         </Form>
 
-        <Divider plain className={styles.divider}>演示账号 · 密码统一 {DEMO_PASSWORD}</Divider>
+        <Divider plain className={styles.divider}>
+          演示账号 · 密码统一 {DEMO_PASSWORD}
+        </Divider>
 
         <Flex vertical gap={8}>
           {DEMO_ACCOUNTS.map(item => (
@@ -84,7 +94,9 @@ export default function LoginPage() {
               </Typography.Text>
               <Button
                 size="small"
-                onClick={() => form.setFieldsValue({ account: item.account, password: DEMO_PASSWORD })}
+                onClick={() =>
+                  form.setFieldsValue({ account: item.account, password: DEMO_PASSWORD })
+                }
               >
                 填入
               </Button>
@@ -93,5 +105,5 @@ export default function LoginPage() {
         </Flex>
       </Card>
     </div>
-  )
+  );
 }

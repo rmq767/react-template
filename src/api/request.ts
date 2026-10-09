@@ -1,27 +1,27 @@
-import axios from 'axios'
-import { getAccessToken } from '@/stores/auth'
-import type { ApiResponse } from '@/types/common'
+import axios from 'axios';
+import { getAccessToken } from '@/stores/auth';
+import type { ApiResponse } from '@/types/common';
 
 const instance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 15000,
-})
+});
 
 instance.interceptors.request.use(config => {
   // token 统一从 auth store 取（zustand persist 已落 localStorage），避免两处读写不一致
-  const token = getAccessToken()
+  const token = getAccessToken();
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  return config
-})
+  return config;
+});
 
 /** 校验业务码，非 0 抛出错误，由 TanStack Query 统一接管 error 状态 */
 function unwrap<T>(body: ApiResponse<T>): T {
   if (typeof body.code === 'number' && body.code !== 0) {
-    throw new Error(body.message || '请求失败')
+    throw new Error(body.message || '请求失败');
   }
-  return body.data
+  return body.data;
 }
 
 /**
@@ -40,6 +40,6 @@ export const http = {
     unwrap((await instance.put<ApiResponse<T>>(url, data)).data),
 
   delete: async <T>(url: string) => unwrap((await instance.delete<ApiResponse<T>>(url)).data),
-}
+};
 
-export default instance
+export default instance;

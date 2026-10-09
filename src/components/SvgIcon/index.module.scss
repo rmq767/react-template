@@ -1,0 +1,19 @@
+.svgIcon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  // 没写死 fill 的图标继承文字色，暗色切换自动跟随（antd 图标同一策略）
+  fill: currentColor;
+  // 与 .anticon svg 的基线值一致，和 antd 图标并排时不会上下错位
+  vertical-align: -0.125em;
+}
+
+.spin {
+  animation: svgIconSpin 1s linear infinite;
+}
+
+@keyframes svgIconSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}

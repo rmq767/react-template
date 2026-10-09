@@ -1,9 +1,9 @@
-import { Button, Result } from 'antd'
-import { useNavigate } from 'react-router-dom'
+import { Button, Result } from 'antd';
+import { useNavigate } from 'react-router-dom';
 
 /** 未匹配到任何路由 */
 export default function NotFoundPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
     <div className="page-result">
@@ -18,5 +18,5 @@ export default function NotFoundPage() {
         }
       />
     </div>
-  )
+  );
 }

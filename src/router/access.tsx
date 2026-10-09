@@ -1,16 +1,16 @@
-import { lazy, type ComponentType, type LazyExoticComponent, type ReactNode } from 'react'
-import { AppstoreOutlined, AuditOutlined, HomeOutlined } from '@ant-design/icons'
-import type { RoleCode } from '@/types/auth'
+import { lazy, type ComponentType, type LazyExoticComponent, type ReactNode } from 'react';
+import { AppstoreOutlined, AuditOutlined, HomeOutlined } from '@ant-design/icons';
+import type { RoleCode } from '@/types/auth';
 
 export interface AccessRoute {
   /** 同时作为菜单 key；'/' 会被注册成 index 路由 */
-  path: string
-  title: string
-  icon: ReactNode
+  path: string;
+  title: string;
+  icon: ReactNode;
   /** 不声明 = 登录即可访问；声明 = 拥有其中任一角色才可访问 */
-  roles?: RoleCode[]
+  roles?: RoleCode[];
   /** 页面组件，用 lazy() 懒加载 ≈ Vue 的 defineAsyncComponent（配合路由代码分割） */
-  component: LazyExoticComponent<ComponentType>
+  component: LazyExoticComponent<ComponentType>;
 }
 
 /**
@@ -39,4 +39,4 @@ export const ACCESS_ROUTES: AccessRoute[] = [
     roles: ['admin'],
     component: lazy<ComponentType>(() => import('@/pages/Audit')),
   },
-]
+];

@@ -1,12 +1,12 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import type { LoginResult, UserProfile } from '@/types/auth'
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { LoginResult, UserProfile } from '@/types/auth';
 
 interface AuthState {
-  token: string | null
-  profile: UserProfile | null
-  signIn: (result: LoginResult) => void
-  signOut: () => void
+  token: string | null;
+  profile: UserProfile | null;
+  signIn: (result: LoginResult) => void;
+  signOut: () => void;
 }
 
 /**
@@ -23,11 +23,11 @@ export const useAuthStore = create<AuthState>()(
     }),
     { name: 'app-auth' },
   ),
-)
+);
 
 /**
  * 供非组件环境（axios 拦截器、router 外的工具函数）读取。
  * 组件里请仍然用 useAuthStore(selector)——那才是响应式的；
  * getState() 类似 Pinia 的 `store.$state` 快照，拿了不会自动重渲染。
  */
-export const getAccessToken = () => useAuthStore.getState().token
+export const getAccessToken = () => useAuthStore.getState().token;

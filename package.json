@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,scss,css}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,scss,css}\" \"*.{ts,js,json}\""
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.4",
@@ -41,6 +41,7 @@
     "sass": "^1.105.1",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.71.1",
-    "vite": "^8.3.4"
+    "vite": "^8.3.4",
+    "vite-plugin-svg-icons-ng": "^1.10.0"
   }
 }

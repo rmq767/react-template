@@ -1,24 +1,24 @@
-import { Card, Table } from 'antd'
-import type { ReactNode } from 'react'
-import type { TableColumnsType, TablePaginationConfig, TableProps } from 'antd'
-import styles from './index.module.scss'
+import { Card, Table } from 'antd';
+import type { ReactNode } from 'react';
+import type { TableColumnsType, TablePaginationConfig, TableProps } from 'antd';
+import styles from './index.module.scss';
 
 export interface PageTableProps<T> {
-  columns: TableColumnsType<T>
-  dataSource: T[]
-  rowKey: TableProps<T>['rowKey']
-  loading?: boolean
+  columns: TableColumnsType<T>;
+  dataSource: T[];
+  rowKey: TableProps<T>['rowKey'];
+  loading?: boolean;
   /** 分页配置由 useTableList 提供，传 false 则不显示分页 */
-  pagination?: TablePaginationConfig | false
+  pagination?: TablePaginationConfig | false;
   /** 表格上方工具条，取代 Vue 的具名插槽 */
-  toolbar?: ReactNode
+  toolbar?: ReactNode;
   /** Card 右上角操作区 */
-  extra?: ReactNode
-  title?: ReactNode
-  scroll?: TableProps<T>['scroll']
-  size?: TableProps<T>['size']
+  extra?: ReactNode;
+  title?: ReactNode;
+  scroll?: TableProps<T>['scroll'];
+  size?: TableProps<T>['size'];
   /** 大数据量虚拟滚动，antd v6 Table 原生支持 */
-  virtual?: boolean
+  virtual?: boolean;
 }
 
 /**
@@ -39,7 +39,7 @@ export default function PageTable<T extends object>(props: PageTableProps<T>) {
     scroll,
     size = 'middle',
     virtual,
-  } = props
+  } = props;
 
   return (
     <Card className={styles.card} title={title} extra={extra}>
@@ -56,5 +56,5 @@ export default function PageTable<T extends object>(props: PageTableProps<T>) {
         virtual={virtual}
       />
     </Card>
-  )
+  );
 }

@@ -1,18 +1,18 @@
-import { Button, Space, Tag, Typography } from 'antd'
-import type { TableColumnsType } from 'antd'
-import type { UserInfo, UserStatus } from '@/api/user'
+import { Button, Space, Tag, Typography } from 'antd';
+import type { TableColumnsType } from 'antd';
+import type { UserInfo, UserStatus } from '@/api/user';
 
 export const STATUS_MAP: Record<UserStatus, { text: string; color: string }> = {
   active: { text: '正常', color: 'success' },
   inactive: { text: '停用', color: 'default' },
   pending: { text: '待审核', color: 'processing' },
-}
+};
 
 export function buildColumns(handlers: {
-  onEdit: (row: UserInfo) => void
-  onDelete: (row: UserInfo) => void
+  onEdit: (row: UserInfo) => void;
+  onDelete: (row: UserInfo) => void;
 }): TableColumnsType<UserInfo> {
-  const { onEdit, onDelete } = handlers
+  const { onEdit, onDelete } = handlers;
 
   return [
     { title: 'ID', dataIndex: 'id', width: 70, fixed: 'left' },
@@ -29,7 +29,9 @@ export function buildColumns(handlers: {
       title: '状态',
       dataIndex: 'status',
       width: 100,
-      render: (status: UserStatus) => <Tag color={STATUS_MAP[status].color}>{STATUS_MAP[status].text}</Tag>,
+      render: (status: UserStatus) => (
+        <Tag color={STATUS_MAP[status].color}>{STATUS_MAP[status].text}</Tag>
+      ),
     },
     { title: '创建时间', dataIndex: 'createdAt', width: 130 },
     {
@@ -55,5 +57,5 @@ export function buildColumns(handlers: {
         </Space>
       ),
     },
-  ]
+  ];
 }

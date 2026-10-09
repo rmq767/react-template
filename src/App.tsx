@@ -1,9 +1,9 @@
-import { App as AntdApp, ConfigProvider, theme as antdTheme } from 'antd'
-import zhCN from 'antd/locale/zh_CN'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { RouterProvider } from 'react-router-dom'
-import { router } from '@/router'
-import { useThemeStore } from '@/stores/theme'
+import { App as AntdApp, ConfigProvider, theme as antdTheme } from 'antd';
+import zhCN from 'antd/locale/zh_CN';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { RouterProvider } from 'react-router-dom';
+import { router } from '@/router';
+import { useThemeStore } from '@/stores/theme';
 
 // QueryClient 必须建在组件外部（模块级单例），否则会随每次 render 重建、缓存全丢。
 // ≈ Vue 里在全局 new 一个 QueryClient 后 app.use 注入。
@@ -17,10 +17,10 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
-})
+});
 
 export default function App() {
-  const dark = useThemeStore(state => state.dark)
+  const dark = useThemeStore(state => state.dark);
 
   return (
     <ConfigProvider
@@ -48,5 +48,5 @@ export default function App() {
         </QueryClientProvider>
       </AntdApp>
     </ConfigProvider>
-  )
+  );
 }

@@ -12,6 +12,7 @@ trigger: always_on
 - react-router-dom **7.18**（data router `createBrowserRouter`）
 - @tanstack/react-query **5.104**、zustand **5**、axios **1.20**、dayjs **1.11**（已切 `zh-cn`）
 - 构建 **Vite 8（Rolldown）**，包管理 pnpm 10，Node `>=22.12`
+- 本地图标：**vite-plugin-svg-icons-ng 1.10**（`src/icons/svg` → 雪碧图 + `components/SvgIcon`，`htmlMode: 'none'` 由 `main.tsx` 显式 register）；组件内的图标需求**优先用 `@ant-design/icons`**，只有私有图标才用 `SvgIcon`。
 - **禁止**出现「React 18 / router v6」表述，禁止建议降级。
 - App 层**未启用 React Compiler**，`useMemo/useCallback` 仍需手写。
 
@@ -25,10 +26,11 @@ trigger: always_on
 | 非组件工具/接口/状态模块 | 小写 | `api/request.ts`、`stores/auth.ts`、`constants/dict.ts` |
 | 含 JSX 的辅助文件 | 小写也允许，但导出的是函数则保持小写 | `pages/UserList/columns.tsx`（`buildColumns` 返回列配置） |
 | **页面私有组件** | PascalCase **扁平文件**，放 `pages/<Page>/components/` | `pages/UserList/components/UserFormModal.tsx` |
+| 本地图标源文件 | kebab-case，语义命名 | `icons/svg/user.svg` → `<SvgIcon name="user" />` |
 | api 函数 | 动词开头 | `fetchXxxList` / `createXxx` / `updateXxx` / `deleteXxx` |
 | CSS Module 类名 | **camelCase** | `.searchForm`、`.actions`（Vite 默认 `localsConvention: camelCase`，kebab 也能用但统一写 camelCase） |
 
-目录职责边界：`api`（接口+类型）/ `components`（跨页面复用的无业务组件）/ `hooks`（跨页面逻辑）/ `pages/<PascalCase>`（页面）/ `router`（路由与权限源）/ `stores`（zustand UI 状态）/ `styles`（全局 SCSS 变量与 mixin）/ `types`（共享类型）/ `constants`（业务字典）。
+目录职责边界：`api`（接口+类型）/ `components`（跨页面复用的无业务组件）/ `hooks`（跨页面逻辑）/ `icons/svg`（本地 svg 图标源，新增不需注册）/ `pages/<PascalCase>`（页面）/ `router`（路由与权限源）/ `stores`（zustand UI 状态）/ `styles`（全局 SCSS 变量与 mixin）/ `types`（共享类型）/ `constants`（业务字典）。
 
 ### 2.1 组件归位（两级 `components` 语义不同）
 
@@ -83,6 +85,7 @@ trigger: always_on
 4. DatePicker 与字符串：store 存 `YYYY-MM-DD`，用 `normalize` + `getValueProps` 与 Dayjs 双向转换。
 5. antd Modal 实例会复用（不像 Vue `v-if` 销毁重建）：`open` 变化时必须 `resetFields()` + `setFieldsValue()`。
 6. 交互回调要传给 `columns`/子组件时：回调用 `useCallback`、`columns` 用 `useMemo`；依赖 `useMutation` 的回调请解构 `mutateAsync`（引用稳定）再放依赖，别把每次 render 都变的 mutation 对象塞进 deps。
+7. 雪碧图的 `<use>` 只能**继承** `fill`/`stroke`：元素自身写死的颜色属性优先级高于继承，外层 CSS 盖不住。`stroke` 已由插件 `strokeOverride: true` 统一成 `currentColor`，**写死 `fill` 的 svg 入库前必须手工清色**，否则暗色模式下图标看不见。
 
 ## 7. 验证清单（提交前）
 

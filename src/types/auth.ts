@@ -1,5 +1,5 @@
 /** 角色编码：菜单过滤与路由守卫都以它为准 */
-export type RoleCode = 'admin' | 'editor' | 'viewer'
+export type RoleCode = 'admin' | 'editor' | 'viewer';
 
 /**
  * ⚠️ 本文件统一用 type 而不是 interface：
@@ -7,17 +7,17 @@ export type RoleCode = 'admin' | 'editor' | 'viewer'
  * 项目里的 UserFilter / UserFormValues 同理，遵循同一个约定。
  */
 export type UserProfile = {
-  account: string
-  name: string
-  roles: RoleCode[]
-}
+  account: string;
+  name: string;
+  roles: RoleCode[];
+};
 
 export type LoginPayload = {
-  account: string
-  password: string
-}
+  account: string;
+  password: string;
+};
 
 export type LoginResult = {
-  token: string
-  profile: UserProfile
-}
+  token: string;
+  profile: UserProfile;
+};

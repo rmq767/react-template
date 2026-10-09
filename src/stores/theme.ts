@@ -1,11 +1,11 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface ThemeState {
-  dark: boolean
-  collapsed: boolean
-  toggleDark: () => void
-  toggleCollapsed: () => void
+  dark: boolean;
+  collapsed: boolean;
+  toggleDark: () => void;
+  toggleCollapsed: () => void;
 }
 
 /**
@@ -23,4 +23,4 @@ export const useThemeStore = create<ThemeState>()(
     }),
     { name: 'app-theme' },
   ),
-)
+);
