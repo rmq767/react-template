@@ -24,6 +24,7 @@ export interface PageTableProps<T> {
 /**
  * 纯展示表格：只吃数据和配置，不碰请求、不碰分页状态。
  * 数据与分页状态由父组件的 useTableList 提供。
+ * ≈ Vue 里一个无状态子组件：靠 props 接收一切，自己不拉数据。
  */
 export default function PageTable<T extends object>(props: PageTableProps<T>) {
   const {

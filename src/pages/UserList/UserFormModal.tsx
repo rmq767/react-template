@@ -37,8 +37,10 @@ export default function UserFormModal({
   onSuccess: onSaved,
 }: UserFormModalProps) {
   const { message } = App.useApp()
+  // Form.useForm 拿到表单实例 ≈ Vue 里给表单加个 ref，再调 form.value.xxx
   const [form] = Form.useForm<UserFormValues>()
 
+  // ≈ watch(() => props.open)：弹窗实例会被复用，每次打开必须手动重置，否则残留上次输入
   useEffect(() => {
     if (!open) return
     form.resetFields()

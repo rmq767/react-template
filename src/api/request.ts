@@ -27,6 +27,7 @@ function unwrap<T>(body: ApiResponse<T>): T {
 /**
  * 统一出口：泛型直接写业务数据类型，不要在业务里再解包 response。
  * loading / error / 重试 / 缓存全部交给 useQuery，组件里不写请求生命周期。
+ * ≈ Vue 项目里封装的 request.js：只是发请求，不管何时调、不调失败重试（那是 react-query 的活）。
  */
 export const http = {
   get: async <T>(url: string, params?: Record<string, unknown>) =>

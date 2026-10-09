@@ -9,7 +9,10 @@ interface AuthState {
   signOut: () => void
 }
 
-/** 登录态属于「跨页面 UI 状态」，放 Zustand 并持久化，刷新后不掉登录 */
+/**
+ * 登录态属于「跨页面 UI 状态」，放 Zustand 并持久化，刷新后不掉登录。
+ * ≈ Vue 的 Pinia `defineStore`；`persist` 中间件 ≈ pinia-plugin-persistedstate。
+ */
 export const useAuthStore = create<AuthState>()(
   persist(
     set => ({
@@ -24,6 +27,7 @@ export const useAuthStore = create<AuthState>()(
 
 /**
  * 供非组件环境（axios 拦截器、router 外的工具函数）读取。
- * 组件里请仍然用 useAuthStore(selector)，否则拿不到响应式更新。
+ * 组件里请仍然用 useAuthStore(selector)——那才是响应式的；
+ * getState() 类似 Pinia 的 `store.$state` 快照，拿了不会自动重渲染。
  */
 export const getAccessToken = () => useAuthStore.getState().token

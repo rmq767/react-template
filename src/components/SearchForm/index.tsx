@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Button, Col, DatePicker, Input, Row, Select, Space } from 'antd'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Button, DatePicker, Input, Select, Space } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
-import clsx from 'clsx'
 import styles from './index.module.scss'
 
 export interface FilterOption {
@@ -16,8 +15,6 @@ export interface FilterSchemaItem {
   type: 'input' | 'select' | 'dateRange'
   options?: FilterOption[]
   placeholder?: string
-  /** 栅格占位，24 栅格制，默认 8（一行三个） */
-  span?: number
 }
 
 export interface SearchFormProps<F extends Record<string, unknown>> {
@@ -40,13 +37,15 @@ const DATE_FORMAT = 'YYYY-MM-DD'
  */
 export default function SearchForm<F extends Record<string, unknown>>(props: SearchFormProps<F>) {
   const { schema, values, defaultValues, onSubmit, onReset, extra } = props
+  // 草稿箱 ≈ 一个 ref；但 React 状态不可变，改值必须 setDraft 整体新对象，不能直接改属性
   const [draft, setDraft] = useState<Record<string, unknown>>({ ...values })
 
   // 外部筛选变化（点查询、浏览器前进后退、重置）时回填草稿
-  const committed = useMemo(() => JSON.stringify(values), [values])
+  // ≈ Vue 的 watch(values, 回填表单)；values 引用已由 useUrlFilter 的 useMemo 稳定，
+  // 无需再 JSON.stringify 比较，直接依赖 values。
   useEffect(() => {
-    setDraft({ ...(JSON.parse(committed) as F) })
-  }, [committed])
+    setDraft(structuredClone(values))
+  }, [values])
 
   const setValue = (name: string, value: unknown) =>
     setDraft(prev => ({ ...prev, [name]: value }))
@@ -102,33 +101,32 @@ export default function SearchForm<F extends Record<string, unknown>>(props: Sea
 
   return (
     <div className={styles.search} data-search-form>
-      <Row gutter={[16, 12]}>
-        {schema.map(item => (
-          <Col key={item.name} span={item.span ?? 8}>
-            <Space.Compact className={styles.item}>
+      <div className={styles.main}>
+        <div className={styles.fields}>
+          {schema.map(item => (
+            <div key={item.name} className={styles.item}>
               <span className={styles.label}>{item.label}</span>
               {renderControl(item)}
-            </Space.Compact>
-          </Col>
-        ))}
+            </div>
+          ))}
+        </div>
 
-        <Col flex="none" className={clsx(styles.actions, extra && styles['actions-between'])}>
-          <Space>
-            <Button type="primary" onClick={() => onSubmit(draft as Partial<F>)}>
-              查询
-            </Button>
-            <Button
-              onClick={() => {
-                setDraft(structuredClone({ ...defaultValues }))
-                onReset()
-              }}
-            >
-              重置
-            </Button>
-          </Space>
-          {extra}
-        </Col>
-      </Row>
+        <Space className={styles.toggle}>
+          <Button type="primary" onClick={() => onSubmit(draft as Partial<F>)}>
+            查询
+          </Button>
+          <Button
+            onClick={() => {
+              setDraft(structuredClone(defaultValues))
+              onReset()
+            }}
+          >
+            重置
+          </Button>
+        </Space>
+      </div>
+
+      {extra && <div className={styles.toolbar}>{extra}</div>}
     </div>
   )
 }

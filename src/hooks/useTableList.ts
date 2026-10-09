@@ -1,8 +1,8 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { useCallback, useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useCallback, useMemo, useState } from 'react'
 import type { TablePaginationConfig } from 'antd'
 import type { PageParams, PageResult } from '@/types/common'
+import { useUrlFilter } from './useUrlFilter'
+import { useListQuery } from './useListQuery'
 
 export interface UseTableListOptions<TData, TFilter extends Record<string, unknown>> {
   /** 缓存 key，同一页面唯一 */
@@ -17,90 +17,45 @@ export interface UseTableListOptions<TData, TFilter extends Record<string, unkno
   defaultPageSize?: number
 }
 
-/** 数组、对象等复杂值用 JSON 存进 URL，标量直接存 */
-function serialize(value: unknown): string {
-  return typeof value === 'object' ? JSON.stringify(value) : String(value)
-}
-
-function restore(raw: string, fallback: unknown): unknown {
-  if (raw.startsWith('[') || raw.startsWith('{')) {
-    try {
-      return JSON.parse(raw)
-    } catch {
-      return fallback
-    }
-  }
-  if (typeof fallback === 'number') return Number(raw) || 0
-  if (typeof fallback === 'boolean') return raw === 'true'
-  return raw
-}
-
-function isEmpty(value: unknown): boolean {
-  if (value === undefined || value === null || value === '') return true
-  return Array.isArray(value) && value.length === 0
-}
-
 /**
- * 列表页三件套（筛选 + 表格 + 分页）统一逻辑。
- * 等价于 Vue 里的 useSearchFilter + 分页状态 + 请求 loading 手写代码。
+ * 列表页三件套（筛选 + 表格 + 分页）统一入口 —— 只做「组合」，不写具体逻辑。
  *
- * 状态分层：
- * - 筛选与分页 -> URL search params（可分享、刷新不丢、后退可还原）
- * - 列表数据   -> TanStack Query（loading / error / 缓存 / 竞态全部免写）
- * - 组件内草稿 -> SearchForm 自己维护，点「查询」才提交
+ * 分层：
+ * - useUrlFilter  -> 筛选与分页 <-> URL（可分享、刷新不丢、后退可还原）
+ * - useListQuery  -> TanStack Query 数据层（loading / error / 缓存 / 竞态全部免写）
+ * - 本 hook        -> 把两层拼起来，外加 antd 分页配置与「查询动作」计数
  */
 export function useTableList<TData, TFilter extends Record<string, unknown>>(
   options: UseTableListOptions<TData, TFilter>,
 ) {
   const { queryKey, api, defaultFilter, defaultPageSize = 10 } = options
-  const [searchParams, setSearchParams] = useSearchParams()
-
-  const filter = useMemo(() => {
-    const source = defaultFilter as Record<string, unknown>
-    const next: Record<string, unknown> = { ...source }
-    for (const name of Object.keys(source)) {
-      const raw = searchParams.get(name)
-      if (raw !== null) next[name] = restore(raw, source[name])
-    }
-    return next as TFilter
-  }, [searchParams, defaultFilter])
-
-  const page = Number(searchParams.get('page')) || 1
-  const pageSize = Number(searchParams.get('pageSize')) || defaultPageSize
-
-  // 用序列化结果做 queryKey：即使 filter 对象引用变化也不会触发多余请求
-  const filterJson = useMemo(() => JSON.stringify(filter), [filter])
-
-  const query = useQuery({
-    queryKey: [queryKey, filterJson, page, pageSize],
-    queryFn: () => api({ ...(JSON.parse(filterJson) as TFilter), page, pageSize }),
-    placeholderData: keepPreviousData,
+  const { filter, page, pageSize, setFilter, reset, setPagination } = useUrlFilter<TFilter>({
+    defaultFilter,
+    defaultPageSize,
   })
 
-  /** 提交筛选条件，并回到第一页 */
+  // 「查询动作」计数：每次点「查询」/「重置」自增，让 queryKey 产生新引用。
+  // 这样即便筛选与当前完全一致、且组件已挂载（staleTime:0 只在挂载/key 变时自动拉），
+  // 也能保证「点一次查询 = 发一次请求」。
+  // ≈ Vue 里没有响应式重拉机制时的手动 `getList()`；React 靠改 key 声明式触发。
+  const [nonce, setNonce] = useState(0)
+
+  const query = useListQuery<TData, TFilter>({ queryKey, api, filter, page, pageSize, nonce })
+
+  /** 提交筛选条件，回到第一页，并触发一次查询（≈ 一次显式「查询」动作，顺带把条件写进 URL） */
   const submitFilter = useCallback(
     (draft: Partial<TFilter>) => {
-      const merged: Record<string, unknown> = { ...filter, ...draft }
-      const next = new URLSearchParams(searchParams)
-      for (const name of Object.keys(defaultFilter)) {
-        const value = merged[name]
-        if (isEmpty(value)) next.delete(name)
-        else next.set(name, serialize(value))
-      }
-      next.delete('page')
-      setSearchParams(next, { replace: true })
+      setFilter({ ...filter, ...draft })
+      setNonce(n => n + 1)
     },
-    [filter, searchParams, defaultFilter, setSearchParams],
+    [setFilter, filter],
   )
 
-  /** 清空全部筛选条件 */
+  /** 清空全部筛选条件，并触发一次查询 */
   const resetFilter = useCallback(() => {
-    const next = new URLSearchParams(searchParams)
-    for (const name of Object.keys(defaultFilter)) next.delete(name)
-    next.delete('page')
-    next.delete('pageSize')
-    setSearchParams(next, { replace: true })
-  }, [searchParams, defaultFilter, setSearchParams])
+    reset()
+    setNonce(n => n + 1)
+  }, [reset])
 
   const pagination = useMemo<TablePaginationConfig>(
     () => ({
@@ -109,18 +64,14 @@ export function useTableList<TData, TFilter extends Record<string, unknown>>(
       total: query.data?.total ?? 0,
       showSizeChanger: true,
       showTotal: total => `共 ${total} 条`,
-      onChange: (nextPage, nextSize) => {
-        const params = new URLSearchParams(searchParams)
-        params.set('page', String(nextSize !== pageSize ? 1 : nextPage))
-        params.set('pageSize', String(nextSize))
-        setSearchParams(params, { replace: true })
-      },
+      onChange: setPagination,
     }),
-    [page, pageSize, query.data?.total, searchParams, setSearchParams],
+    [page, pageSize, query.data?.total, setPagination],
   )
 
   const dataSource = useMemo(() => query.data?.list ?? [], [query.data])
 
+  // 多数列表页只用前六项；total/refetch/query 为高级场景预留（自定义汇总、手动重拉、读 error 状态）。
   return {
     filter,
     dataSource,

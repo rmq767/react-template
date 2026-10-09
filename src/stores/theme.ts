@@ -11,6 +11,7 @@ interface ThemeState {
 /**
  * 只放「跨页面、且服务端不关心」的 UI 状态。
  * 业务数据一律走 TanStack Query，筛选/分页走 URL，不要塞进 store。
+ * ≈ Pinia defineStore；组件里用 `useThemeStore(s => s.dark)` 只订阅需要的字段（≈ 细粒度 computed）。
  */
 export const useThemeStore = create<ThemeState>()(
   persist(

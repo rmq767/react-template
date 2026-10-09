@@ -16,7 +16,7 @@ const GROUPS: StackGroup[] = [
   {
     title: '基础层',
     items: [
-      { name: 'React', version: '19.3', desc: '并发特性 + Server Components 生态，Compiler 免手写 memo' },
+      { name: 'React', version: '19.3', desc: '并发特性 + Server Components；App 未启用 Compiler，仍需手写 memo' },
       { name: 'TypeScript', version: '5.9', desc: 'typescript-eslint 尚不支持 TS 7，锁 5.9' },
       { name: 'Vite', version: '8.3', desc: 'dev server + 构建，@ 别名与 SCSS 变量已配好' },
       { name: 'pnpm', version: '10.x', desc: '包管理' },

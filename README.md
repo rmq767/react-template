@@ -8,7 +8,7 @@
 
 | 层次 | 选型 | 版本 | 说明 |
 | --- | --- | --- | --- |
-| 框架 | React | 19.3.0 | 并发特性，Compiler 已在 antd dist 产物中启用 |
+| 框架 | React | 19.3.0 | 并发特性。**本项目 App 层未启用 React Compiler**（antd dist 自带编译器不影响本 App），故仍需手写 `useMemo/useCallback` |
 | 语言 | TypeScript | 5.9.3 | **不能升 7.x**：`typescript-eslint` 要求 `typescript <6.1.0` |
 | 构建 | Vite | 8.3.4 | 底层已是 Rolldown |
 | UI | Ant Design | 6.6.5 | v6 原生支持 React 19，无需 `@ant-design/v5-patch-for-react-19` |
@@ -63,7 +63,9 @@ src/
 │   └── PageTable/        # 纯展示表格，不碰数据加载
 ├── constants/dict.ts     # 业务字典：部门、角色、状态（筛选项与 mock 数据同源）
 ├── hooks/
-│   ├── useTableList.ts   # 列表页核心：筛选 + 分页 + 请求三合一
+│   ├── useTableList.ts   # 列表页门面：组合下面两层 + antd 分页 + 查询动作计数
+│   ├── useUrlFilter.ts   # URL 层：筛选/分页 <-> 地址栏（可分享、刷新不丢、后退还原）
+│   ├── useListQuery.ts   # 数据层：纯 react-query 封装（staleTime:0 实时、keepPreviousData）
 │   └── useAccess.ts      # 角色判断 + 过滤后的菜单数据
 ├── layouts/BasicLayout.tsx
 ├── pages/
@@ -119,18 +121,40 @@ src/
 `src/pages/UserList/index.tsx` 是一个完整 CRUD 样板，整页没有一行请求生命周期代码：
 
 ```tsx
-const { filter, dataSource, loading, pagination, submitFilter, resetFilter, refetch } =
+const USER_LIST_QUERY_KEY = 'user-list'
+
+const { filter, dataSource, loading, pagination, submitFilter, resetFilter, query } =
   useTableList<UserInfo, UserFilter>({
-    queryKey: 'user-list',
+    queryKey: USER_LIST_QUERY_KEY,
     api: fetchUserList,
     defaultFilter: DEFAULT_FILTER,
   })
 ```
 
-- **查询**：`SearchForm` 内部维护草稿，点「查询」才提交到 URL 触发请求（输入不会疯狂请求）。查询按钮不显示 loading，加载态由表格承担。
+- **查询**：`SearchForm` 内部维护草稿，点「查询」才提交到 URL（输入不会疯狂请求）。点查询时 `useTableList` 会自增一个 `nonce`，即使筛选完全没变也会重新发一次请求。
+- **实时**：列表 `staleTime: 0`，每次进页面/回到页面都重新拉最新（≈ Vue keep-alive 里在 `activated` 手动重拉，这里交给框架）。
 - **翻页**：`keepPreviousData` 保证翻页时旧数据不闪白。
 - **新增/编辑**：同一个 `UserFormModal` 组件，`record === null` 即新增模式。
-- **删除/提交后刷新**：`queryClient.invalidateQueries({ queryKey: ['user-list'] })`，不手写 reload。
+- **删除/提交后刷新**：`queryClient.invalidateQueries({ queryKey: [USER_LIST_QUERY_KEY] })`，不手写 reload。
+- **错误**：列表请求失败由 `query.isError` 暴露，页面用 `Alert` 提示并给「重试」按钮。
+
+### 5.1 新增一个 CRUD 列表页 checklist
+
+照抄 `UserList` 即可，核心三个 hook 不用改：
+
+1. `src/api/<entity>.ts`：定义 `type XxxFilter`（必须 `type`，见坑#3）、`XxxInfo`、`fetchXxxList / create / update / delete`。
+2. `src/pages/<Entity>List/index.tsx`：组件外 `DEFAULT_FILTER` + `SCHEMA`；`useTableList` 解构；`queryKey` 常量；`invalidateList`。
+3. `columns.tsx`：`buildColumns` 纯函数；交互回调用 `useCallback` + `columns` 用 `useMemo`（见 5.2）。
+4. `<Entity>FormModal.tsx`：新增/编辑一体，Modal 打开时 `resetFields`。
+5. `src/router/access.tsx` 的 `ACCESS_ROUTES` 加一条（`roles` + `lazy`）。
+
+### 5.2 性能 / 引用稳定性约定
+
+本项目 App 层**未启用 React Compiler**，`useMemo/useCallback` 仍要手写：
+
+- **配置对象放组件外**：`DEFAULT_FILTER`、`SCHEMA`、`queryKey` 常量提到模块级，避免每次 render 新建。
+- **跨帧传引用才 memo**：把 `columns` 等作为引用传给子组件（antd Table）时用 `useMemo`；其依赖的回调用 `useCallback` 固定。仅个位数临时值、不跨组件传递的不必 memo（过度优化反而降可读性）。
+- **queryKey 直接放对象**：react-query 会对 queryKey 做深序列化比较，内容相同不算新查询，无需手动 `JSON.stringify`。
 
 ---
 
@@ -178,6 +202,9 @@ const { filter, dataSource, loading, pagination, submitFilter, resetFilter, refe
 | 具名插槽 / `v-slot` | `ReactNode` 类型的 prop（见 `SearchForm` 的 `extra`） |
 | `defineExpose` + 父组件调用 | 状态提升到父组件，用 `open` / `record` props 控制 |
 | MySearch / MyTable / MyPagination | `SearchForm` + `PageTable` + `useTableList` |
+| `activated` 里重新拉数据 | 列表 `staleTime: 0`（回到页面自动重拉） |
+| `defineAsyncComponent` | `lazy()` + `Suspense`（路由懒加载） |
+| 直接改 props / 响应式对象 | 受控值不可变，必须整体替换（`setState` 新对象） |
 
 ---
 
@@ -210,3 +237,12 @@ const { filter, dataSource, loading, pagination, submitFilter, resetFilter, refe
 ```json
 { "code": 0, "message": "ok", "data": { "list": [], "total": 0 } }
 ```
+
+---
+
+## 十、项目规则与 AI 资产
+
+本项目附带两套约束文档，新增代码前先对一遍：
+
+- **项目规则** `.qoder/rules/project.md`：技术栈版本基线、命名与目录约定、状态四层归位、样式五层优先级、列表页范式、验证清单。给人看、也给 AI 助手当约束。
+- **CRUD 列表页 Skill** `.qoder/skills/list-page-crud/SKILL.md`：配置驱动地新建一个列表/CRUD 页的分步骨架（对标 rda-ui 的 my-search / my-table / my-pagination），照它的步骤与模板就能“拄就对”。

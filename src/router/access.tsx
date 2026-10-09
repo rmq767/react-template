@@ -9,6 +9,7 @@ export interface AccessRoute {
   icon: ReactNode
   /** 不声明 = 登录即可访问；声明 = 拥有其中任一角色才可访问 */
   roles?: RoleCode[]
+  /** 页面组件，用 lazy() 懒加载 ≈ Vue 的 defineAsyncComponent（配合路由代码分割） */
   component: LazyExoticComponent<ComponentType>
 }
 

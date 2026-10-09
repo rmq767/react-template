@@ -5,9 +5,13 @@ import { RouterProvider } from 'react-router-dom'
 import { router } from '@/router'
 import { useThemeStore } from '@/stores/theme'
 
+// QueryClient 必须建在组件外部（模块级单例），否则会随每次 render 重建、缓存全丢。
+// ≈ Vue 里在全局 new 一个 QueryClient 后 app.use 注入。
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      // 全局默认：详情/字典等可受益于短时缓存。
+      // 列表页需实时，在 useListQuery 里单独覆盖为 staleTime: 0。
       staleTime: 30_000,
       retry: 1,
       refetchOnWindowFocus: false,
@@ -24,7 +28,7 @@ export default function App() {
       theme={{
         // 暗色只切算法，业务 CSS 里的 var(--ant-*) 自动跟着变，不需要写第二套样式
         algorithm: dark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-        // antd v6 已默认以纯 CSS Variables 输出样式，业务 SCSS 直接复用同一套 token，无需再配 cssVar
+        // antd v6 已默认以纯 CSS Variables 输出 token（无需再配 cssVar）；变量挂在 .ant-app 子树，业务 SCSS 用 var(--ant-*) 须在 ConfigProvider 内
         token: {
           colorPrimary: '#1677ff',
           borderRadius: 6,
@@ -37,6 +41,7 @@ export default function App() {
       }}
     >
       {/* AntdApp 提供 context 版 message/modal，静态方法拿不到主题 */}
+      {/* Provider 链≈ Vue 的 app.use(...) 叠加全局上下文：ConfigProvider=主题/locale，AntdApp=可拿 message/modal 的 context，QueryClientProvider=数据缓存 */}
       <AntdApp>
         <QueryClientProvider client={queryClient}>
           <RouterProvider router={router} />

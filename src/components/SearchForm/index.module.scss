@@ -1,41 +1,51 @@
 .search {
+  display: flex;
+  flex-direction: column;
+  gap: $space-sm;
   padding: $space-md;
   background: $color-bg-container;
   border: 1px solid $color-border;
   border-radius: $radius-md;
 }
 
-.item {
+.main {
   display: flex;
-  width: 100%;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-sm $space-md;
 }
 
-.label {
+.fields {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-sm $space-md;
+}
+
+.item {
   display: inline-flex;
   align-items: center;
+  gap: $space-sm;
+}
+
+// 默认 label：纯文本，不加边框与底色
+.label {
   flex-shrink: 0;
-  padding: 0 10px;
   color: $color-text-secondary;
-  font-size: 13px;
   white-space: nowrap;
-  background: var(--ant-color-fill-alter);
-  border: 1px solid var(--ant-color-border);
-  border-right: 0;
-  border-radius: $radius-sm 0 0 $radius-sm;
 }
 
-// Space.Compact 的第二个子元素需要吃掉剩余宽度
+// 控件保留可读宽度，不再撑满栅格列
 .control {
-  flex: 1;
-  min-width: 0;
+  min-width: 160px;
 }
 
-.actions {
+.toggle {
+  flex-shrink: 0;
+}
+
+.toolbar {
   display: flex;
   align-items: center;
-  gap: $space-md;
-}
-
-.actions-between {
-  margin-inline-start: auto;
+  gap: $space-sm;
 }

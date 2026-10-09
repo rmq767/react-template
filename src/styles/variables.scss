@@ -18,7 +18,7 @@ $header-height: 56px;
 $sider-width: 220px;
 
 // 直接复用 antd v6 的 CSS 变量，保证与组件库主题（含暗色）自动同步
-// antd 变量在运行时由 ConfigProvider 的 theme.cssVar 注入到根节点
+// antd v6 默认以 CSS Variables 输出 token，无需再配 cssVar；变量挂在 ConfigProvider 的 .ant-app 子树（非 :root），业务 SCSS 使用 var(--ant-*) 必须位于其内
 $color-bg-container: var(--ant-color-bg-container);
 $color-border: var(--ant-color-border-secondary);
 $color-text: var(--ant-color-text);
