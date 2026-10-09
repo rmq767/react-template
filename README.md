@@ -54,21 +54,34 @@ pnpm format      # Prettier
 ```
 src/
 ├── api/
-│   ├── request.ts        # axios 实例 + 业务码解包，唯一出现 axios 的地方
+│   ├── request.ts        # axios 实例 + 业务码解包 + token 注入，唯一出现 axios 的地方
+│   ├── auth.ts           # 登录接口（含三个演示账号）
 │   ├── user.ts           # 接口定义 + 类型（UserInfo / UserFilter / UserFormValues）
 │   └── mock.ts           # 内存 mock，供无后端时演示
 ├── components/
 │   ├── SearchForm/       # 配置驱动筛选表单（input / select / dateRange）
 │   └── PageTable/        # 纯展示表格，不碰数据加载
 ├── constants/dict.ts     # 业务字典：部门、角色、状态（筛选项与 mock 数据同源）
-├── hooks/useTableList.ts # 列表页核心：筛选 + 分页 + 请求三合一
+├── hooks/
+│   ├── useTableList.ts   # 列表页核心：筛选 + 分页 + 请求三合一
+│   └── useAccess.ts      # 角色判断 + 过滤后的菜单数据
 ├── layouts/BasicLayout.tsx
 ├── pages/
+│   ├── Login/            # 登录页（布局外，独立整页）
 │   ├── Home/             # 技术栈总览
-│   └── UserList/         # 列表页范式（含新增/编辑弹窗）
-├── router/index.tsx      # 懒加载路由
-├── stores/theme.ts       # zustand：暗色 + 菜单折叠
+│   ├── UserList/         # 列表页范式（含新增/编辑弹窗）
+│   ├── Audit/            # 操作日志（仅 admin，权限演示用）
+│   ├── Forbidden/        # 403
+│   └── NotFound/         # 404
+├── router/
+│   ├── access.tsx        # ⭐ 菜单与路由的唯一数据源（含 roles 声明）
+│   ├── AuthGuard.tsx     # 声明式路由守卫
+│   └── index.tsx         # 由 ACCESS_ROUTES 派生路由表
+├── stores/
+│   ├── auth.ts           # 登录态（persist），getAccessToken 供 axios 用
+│   └── theme.ts          # 暗色 + 菜单折叠
 ├── styles/               # variables.scss / mixins.scss / global.scss
+├── types/                # common.ts（分页/响应）+ auth.ts（角色/登录）
 └── App.tsx               # ConfigProvider + QueryClientProvider + RouterProvider
 ```
 
@@ -121,7 +134,37 @@ const { filter, dataSource, loading, pagination, submitFilter, resetFilter, refe
 
 ---
 
-## 六、Vue 3 → React 概念对照
+## 六、登录与角色权限
+
+演示账号（密码统一 `123456`）：
+
+| 账号 | 角色 | 可见菜单 |
+| --- | --- | --- |
+| `admin` | admin | 技术栈总览 / 用户列表 / 操作日志 |
+| `editor` | editor | 技术栈总览 / 用户列表（手输 `/audit` 跳 403） |
+| `viewer` | viewer | 仅技术栈总览（`/users`、`/audit` 都跳 403） |
+
+**单一数据源**：`src/router/access.tsx` 里的 `ACCESS_ROUTES` 同时驱动三件事——路由表、左侧菜单、权限判断，因此不会出现「菜单藏了但路由还能直连」这种不一致。
+
+```tsx
+{
+  path: '/audit',
+  title: '操作日志',
+  icon: <AuditOutlined />,
+  roles: ['admin'], // 不声明 = 登录即可访问；声明 = 拥有其中任一角色才可进
+  component: lazy<ComponentType>(() => import('@/pages/Audit')),
+}
+```
+
+**新增一个带权限的页面只需两步**：① 在 `ACCESS_ROUTES` 加一条（写好 `roles`）；② 建页面组件。菜单、路由、拦截自动生效。
+
+**守卫方式**：React Router 没有 Vue 的全局 `beforeEach`，改用声明式组件 `AuthGuard` 包裹每个路由元素：未登录 → `/login?redirect=原地址`（登录后自动跳回，含 query）；角色不符 → `/403`。按钮级粒度用 `useAccess().can(['admin'])` 判断。
+
+**登录态存储**：Zustand + `persist`（localStorage key `app-auth`），F5 刷新不掉登录；axios 通过 `getAccessToken()` 读取并注入 `Authorization` 头。`/403` 与 `/404` 故意放在布局外，避免未登录时被外层守卫二次拦截产生歧义。
+
+---
+
+## 七、Vue 3 → React 概念对照
 
 | Vue 3 | React（本项目） |
 | --- | --- |
@@ -138,7 +181,7 @@ const { filter, dataSource, loading, pagination, submitFilter, resetFilter, refe
 
 ---
 
-## 七、已踩过的坑（改动前请先读）
+## 八、已踩过的坑（改动前请先读）
 
 1. **SCSS 全局变量注入不能用 `@/` 别名**：Sass 不认识 Vite 的 `resolve.alias`，`vite.config.ts` 里用绝对路径注入，并排除了 `variables.scss` 自身避免自引用。业务 SCSS 里若要 `mixins.scss`，需手动 `@use` 相对路径。
 2. **Vite 8 分包配置换成 `advancedChunks`**：`manualChunks` 的对象写法在 Rolldown 下静默失效（表现为所有依赖挤进一个 chunk）。
@@ -149,15 +192,18 @@ const { filter, dataSource, loading, pagination, submitFilter, resetFilter, refe
 7. **Sider 自带折叠触发条不跟随暗色算法**：本项目设 `trigger={null}`，折叠统一走 Header 按钮。
 8. **DatePicker 与字符串值**：表单 store 存 `YYYY-MM-DD` 字符串，通过 `normalize` + `getValueProps` 与控件的 Dayjs 双向转换。
 9. **Select 的 placeholder 只在值为 `undefined`/`null` 时出现**：本项目用空字符串 `''` 表示「未选」（便于 URL 与提交载荷保持一致），而 antd 会把 `''` 当成「选中了一个不存在的选项」渲染成空白。因此搜索区用 `value={v || undefined}`、弹窗表单用 `getValueProps={v => ({ value: v || undefined })}` 在控件层做一次转换。新增下拉控件时注意同一个坑。
+10. **「只有内容区滚动」需要三个条件同时成立**：外层 Layout 用 `height: 100vh`（用 `min-height` 会被内容撑高，变成整页滚动、Header/Sider 跟着跑）+ 内层 Layout 显式 `min-height: 0`（flex 子项默认 `min-height: auto`，不归零就不会产生内部滚动）+ Content 自身 `overflow: auto`。见 `src/layouts/BasicLayout.module.scss`。
+11. **业务页面不限最大宽度**：`.page` 只留 padding，宽度铺满内容区（需求明确不要 1440 封顶）。需要限宽时在具体页面自己加，不要放进全局类。
 
 ---
 
-## 八、接真实后端
+## 九、接真实后端
 
 1. `.env.development` 设 `VITE_USE_MOCK=false`，`VITE_API_BASE_URL=/api`；
 2. `vite.config.ts` 的 `server.proxy['/api'].target` 改成后端地址；
 3. 按后端实际字段调整 `src/api/request.ts` 的 `unwrap`（当前约定 `code === 0` 为成功）；
-4. 删除 `src/api/mock.ts`。
+4. `src/api/auth.ts` 关掉 mock 分支走 `/auth/login`；若后端是「只给 token、用户信息需事后再拉」的模式，把拉取 profile 放到路由 `loader` 里，避免首屏 roles 为空导致误跳 403；
+5. 删除 `src/api/mock.ts`。
 
 后端返回结构约定：
 

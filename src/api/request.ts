@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getAccessToken } from '@/stores/auth'
 import type { ApiResponse } from '@/types/common'
 
 const instance = axios.create({
@@ -7,7 +8,8 @@ const instance = axios.create({
 })
 
 instance.interceptors.request.use(config => {
-  const token = localStorage.getItem('token')
+  // token 统一从 auth store 取（zustand persist 已落 localStorage），避免两处读写不一致
+  const token = getAccessToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }

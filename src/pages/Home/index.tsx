@@ -65,8 +65,9 @@ export default function HomePage() {
         React 19 + Ant Design 6 起步脚手架
       </Typography.Title>
       <Typography.Paragraph type="secondary" className={styles.desc}>
-        对照 Vue 3 + Element Plus 的技术栈迁移版本。左侧菜单「用户列表」是一个完整的列表页范式：
-        配置驱动筛选 + 纯展示表格 + 分页 + 删除后精准刷新，页面里没有一行请求生命周期代码。
+        对照 Vue 3 + Element Plus 的技术栈迁移版本。「用户列表」是完整的列表页范式：配置驱动筛选 +
+        纯展示表格 + 分页 + 增删改后精准刷新，页面里没有一行请求生命周期代码。「操作日志」用于演示角色权限：
+        不同账号登录看到的菜单不同，直接输地址访问无权限页面会被重定向到 403。
       </Typography.Paragraph>
 
       <Card title="状态该放哪里（迁移最容易踩的规则）" className={styles.alert}>

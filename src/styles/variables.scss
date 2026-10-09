@@ -16,7 +16,6 @@ $radius-lg: 12px;
 // 业务布局尺寸
 $header-height: 56px;
 $sider-width: 220px;
-$page-max-width: 1440px;
 
 // 直接复用 antd v6 的 CSS 变量，保证与组件库主题（含暗色）自动同步
 // antd 变量在运行时由 ConfigProvider 的 theme.cssVar 注入到根节点

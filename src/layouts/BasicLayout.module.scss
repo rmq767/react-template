@@ -1,11 +1,16 @@
 @use '../styles/mixins.scss' as *;
 
+// 外层锁死视口高度（用 height 而不是 min-height：min-height 会被内容撑高，
+// 变成整个 body 滚动，Header / Sider 跟着跑）
 .layout {
-  min-height: 100vh;
+  height: 100vh;
+  // 锁死外层：万一后续加入绝对定位 / 负 margin 的元素，也不会再把 body 撑成可滚动
+  overflow: hidden;
 }
 
 .header {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
   height: $header-height;
@@ -19,16 +24,34 @@
   font-size: 16px;
 }
 
+.user {
+  cursor: pointer;
+}
+
 .body {
+  flex: 1;
+  // flex 子项默认 min-height: auto，不显式归零就不会产生内部滚动，
+  // 而是把父容器一路顶高——这是「内容区滚动」失效的真正原因
+  min-height: 0;
   overflow: hidden;
 }
 
 .sider {
+  flex: 0 0 auto;
   border-inline-end: 1px solid $color-border;
   background: $color-bg-container;
+
+  // 菜单过长时在侧边栏内部滚动，不把整页撑高
+  :global(.ant-layout-sider-children) {
+    overflow-y: auto;
+
+    @include scrollbar;
+  }
 }
 
 .content {
+  flex: 1;
+  min-width: 0;
   overflow: auto;
   padding: 0;
 

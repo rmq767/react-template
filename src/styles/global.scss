@@ -24,11 +24,9 @@ a {
   text-decoration: none;
 }
 
-// 通用页面容器
+// 通用页面容器（不限最大宽度，铺满内容区）
 .page {
   padding: $space-md;
-  max-width: $page-max-width;
-  margin: 0 auto;
 }
 
 // 路由懒加载占位
@@ -37,4 +35,12 @@ a {
   align-items: center;
   justify-content: center;
   min-height: 320px;
+}
+
+// 403 / 404 结果页容器
+.page-result {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
 }

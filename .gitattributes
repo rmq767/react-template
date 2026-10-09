@@ -1,0 +1,2 @@
+# 与 .editorconfig 保持 lf，避免 Windows 下 autocrlf 造成全文件 diff
+* text=auto eol=lf

@@ -1,0 +1,30 @@
+.wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: $space-lg;
+  background: var(--ant-color-bg-layout);
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.title {
+  margin-block-end: $space-xs;
+}
+
+.divider {
+  font-size: 12px;
+}
+
+.account {
+  flex-shrink: 0;
+}
+
+.desc {
+  flex: 1;
+  font-size: 12px;
+}
