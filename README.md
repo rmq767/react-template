@@ -222,7 +222,7 @@ const { filter, dataSource, loading, pagination, submitFilter, resetFilter, quer
 
 ## 八、已踩过的坑（改动前请先读）
 
-1. **SCSS 全局变量注入不能用 `@/` 别名**：Sass 不认识 Vite 的 `resolve.alias`，`vite.config.ts` 里用绝对路径注入，并排除了 `variables.scss` 自身避免自引用。业务 SCSS 里若要 `mixins.scss`，需手动 `@use` 相对路径。
+1. **SCSS 全局变量注入必须用 `loadPaths` + 裸模块名**：`@/` 别名 Sass 不认识；而在 `@use` 里写绝对路径时 Sass 会把路径当 URL 解析，**项目目录含中文（`后台模板`）就会 `Can't find stylesheet to import`**。因此 `vite.config.ts` 用 `loadPaths: [src/styles]` + 注入 `@use "variables" as *;`，并排除 `variables.scss` / `mixins.scss` 自身避免自引用。业务 SCSS 里若要 `mixins.scss`，需手动 `@use` 相对路径。
 2. **Vite 8 分包配置换成 `advancedChunks`**：`manualChunks` 的对象写法在 Rolldown 下静默失效（表现为所有依赖挤进一个 chunk）。
 3. **泛型约束要求 `type` 而非 `interface`**：`TFilter extends Record<string, unknown>` 无法接受 interface（没有隐式索引签名），见 `api/user.ts` 的 `UserFilter`。
 4. **配置对象必须定义在组件外**：`DEFAULT_FILTER`、`SCHEMA` 若写在组件内，每次 render 都是新引用。

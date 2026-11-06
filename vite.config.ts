@@ -3,11 +3,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons-ng';
 
-/** src 目录绝对路径（正斜杠形式，Sass 也能解析） */
+/** 转成 POSIX 分隔符的绝对路径（正斜杠，Sass 的 loadPaths 也吃这个格式） */
 const toFsPath = (relative: string) =>
   fileURLToPath(new URL(relative, import.meta.url)).replace(/\\/g, '/');
 
-const variablesPath = toFsPath('./src/styles/variables.scss');
+const stylesDir = toFsPath('./src/styles');
 
 export default defineConfig({
   plugins: [
@@ -36,7 +36,10 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         // 全局注入设计变量，业务 .scss 文件里不用再手写 @use
-        // 用绝对路径而非 "@/" 别名：Sass 不识别 Vite 的 resolve.alias
+        // 必须用 loadPaths + 裸模块名：@use 里写绝对路径时 sass 会把路径当 URL 解析，
+        // 项目目录含中文（后台模板）会导致 "Can't find stylesheet to import"，
+        // 而 "@/" 别名 Sass 又不识别，所以只能靠 loadPaths 定位
+        loadPaths: [stylesDir],
         additionalData: (content: string, filename: string) => {
           const normalized = filename.replace(/\\/g, '/');
           if (
@@ -45,7 +48,7 @@ export default defineConfig({
           ) {
             return content;
           }
-          return `@use "${variablesPath}" as *;\n${content}`;
+          return `@use "variables" as *;\n${content}`;
         },
       },
     },

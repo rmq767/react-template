@@ -65,7 +65,7 @@ trigger: always_on
 4. `*.module.scss`（业务自有布局）
 5. `:global(.ant-xxx)`（兜底，克制）
 
-**禁止**用 SCSS 变量覆盖 antd 组件配色（会破坏暗色）。要颜色直接用 `var(--ant-*)`；注意 antd v6 默认以 CSS Variables 输出 token，变量挂在 `.ant-app` 子树，业务 SCSS 用 `var(--ant-*)` 必须位于 `ConfigProvider` 内。SCSS 全局变量由 `vite.config.ts` 用绝对路径注入（`@/` 别名对 Sass 无效）。
+**禁止**用 SCSS 变量覆盖 antd 组件配色（会破坏暗色）。要颜色直接用 `var(--ant-*)`；注意 antd v6 默认以 CSS Variables 输出 token，变量挂在 `.ant-app` 子树，业务 SCSS 用 `var(--ant-*)` 必须位于 `ConfigProvider` 内。SCSS 全局变量由 `vite.config.ts` 注入：`loadPaths: [src/styles]` + `@use "variables" as *;`。**不要改回绝对路径注入** —— Sass 会把 `@use` 里的绝对路径当 URL 解析，本项目目录含中文（`后台模板`）会直接报 `Can't find stylesheet to import`；`@/` 别名 Sass 也不识别。
 
 ## 5. 列表页范式（强制）
 
